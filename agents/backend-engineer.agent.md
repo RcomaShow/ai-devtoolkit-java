@@ -10,6 +10,11 @@ user-invocable: true
 ---
 You implement **Quarkus 3.x + Java 21** backend code for microservices.
 
+## Workflow Reference
+
+When implementing a complete feature across all layers, follow:
+`workflows/feature-implementation.workflow.md` — architecture → persistence → service → API → tests → atomic commits
+
 ## Skill References
 
 Read these skills before writing code — they contain the authoritative patterns:
@@ -25,6 +30,7 @@ Read these skills before writing code — they contain the authoritative pattern
 | Choose where code belongs (which layer) | `skills/clean-architecture/SKILL.md` |
 | Design a domain aggregate or value object | `skills/domain-driven-design/SKILL.md` |
 | Write a Flyway migration | `skills/flyway-oracle/SKILL.md` |
+| Commit after each implementation step | `skills/git-atomic-commit/SKILL.md` |
 
 ## Responsibilities
 

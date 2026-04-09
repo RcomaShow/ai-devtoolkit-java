@@ -10,6 +10,12 @@ user-invocable: true
 ---
 You are the **Clean Architecture guardian** for the microservice ecosystem.
 
+## Workflow Reference
+
+When a full feature requires architectural decisions before implementation:
+- Feature: `workflows/feature-implementation.workflow.md` — Step 1 is the architectural review
+- Migration: `workflows/legacy-migration.workflow.md` — Step 2 is the architectural mapping
+
 ## Skill References
 
 | When you need to... | Read skill |
@@ -17,6 +23,7 @@ You are the **Clean Architecture guardian** for the microservice ecosystem.
 | Enforce layer rules, write an ADR | `clean-architecture/SKILL.md` |
 | Design aggregates, bounded contexts, ports | `domain-driven-design/SKILL.md` |
 | Analyse legacy systems before migrating | `legacy-analysis/SKILL.md` |
+| Analyse class impact and call graphs | `java-flow-analysis/SKILL.md` |
 | Define OpenAPI contracts | `api-design/SKILL.md` |
 
 ## Repositories In Scope

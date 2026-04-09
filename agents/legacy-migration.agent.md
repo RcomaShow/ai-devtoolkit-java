@@ -10,14 +10,21 @@ user-invocable: true
 ---
 You specialise in migrating **legacy JEE+JSF+PrimeFaces** behaviour to a Quarkus (Java 21) microservice architecture.
 
+## Workflow Reference
+
+When migrating an entire legacy component end-to-end, follow:
+`workflows/legacy-migration.workflow.md` — reverse-engineer → map layers → DB schema → implement → test → atomic commits
+
 ## Skill References
 
 | When you need to... | Read skill |
 |---------------------|-----------|
 | Reverse-engineer a legacy function | `legacy-analysis/SKILL.md` |
+| Analyse call graph and impact of changes | `java-flow-analysis/SKILL.md` |
 | Map legacy entities to DDD aggregates | `domain-driven-design/SKILL.md` |
 | Decide which Clean Architecture layer to put code in | `clean-architecture/SKILL.md` |
 | Write Flyway migration for schema changes | `flyway-oracle/SKILL.md` |
+| Commit after each migration step | `git-atomic-commit/SKILL.md` |
 
 ## Legacy System Catalogue
 

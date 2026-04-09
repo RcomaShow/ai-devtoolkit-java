@@ -143,6 +143,73 @@ user-invocable: true
 1. Add a "Related Skills" link in the parent skill (workspace-bootstrap) if relevant.
 2. Add an npm script in `package.json` if the skill has an executable entry point.
 
+---
+
+## Sub-Skill Split Protocol
+
+**When a skill must be split:**
+
+A `SKILL.md` must be split into a routing hub + sub-skills when ALL of the following are true:
+- File exceeds ~200 lines, AND
+- It covers 2 or more **independent** concern areas (e.g., REST layer + persistence layer), AND
+- An agent rarely needs all sections simultaneously in one task
+
+**How to split — step by step:**
+
+1. **Create the hub** (`skills/<name>/SKILL.md`): keep only:
+   - Tech stack / context table
+   - Routing table: `| Task | Sub-Skill |`
+   - Quick-reference (condensed, max 20 lines)
+   - Anti-patterns list
+
+2. **Create sub-skills** (`skills/<name>/<concern>/SKILL.md`): each holds:
+   - Full code patterns for one concern only
+   - Complete rules section for that concern
+   - Checklist for that concern
+
+3. **Sub-skill frontmatter:**
+   ```yaml
+   ---
+   name: <parent>/<concern>
+   description: "<specific concern description>"
+   argument-hint: "<specific task hint>"
+   user-invocable: false
+   ---
+   ```
+
+4. **Update agent Skill References tables**: change from a single row to:
+   - Row 1: hub (start here — for routing)
+   - Row 2-N: each sub-skill (for specific tasks)
+
+5. **Update `orchestrator.agent.md`** routing table if the skill is referenced there.
+
+**Routing hub template:**
+
+```markdown
+# <Skill Name>
+
+## Routing Table
+
+| Task | Sub-Skill |
+|------|-----------|
+| <task description> | `skills/<name>/<concern>/SKILL.md` |
+
+## Quick Reference
+<condensed 10-line summary>
+
+## Anti-Patterns
+- Never do X
+- Never do Y
+```
+
+**Size thresholds:**
+
+| Skill size | Action |
+|-----------|--------|
+| < 150 lines | Keep as single file |
+| 150–250 lines | Consider splitting if covers 2+ concerns |
+| > 250 lines | Split required — apply this protocol |
+
 ## Creating a New MCP Configuration
 
 ### When is an MCP justified?
