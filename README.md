@@ -126,6 +126,7 @@ These agents work in any Java/Quarkus project without modification:
 | `api-designer` | `agents/api-designer.agent.md` | OpenAPI 3.1 spec + REST contract review |
 | `database-engineer` | `agents/database-engineer.agent.md` | Flyway migrations, Panache entities, Oracle schema |
 | `tdd-validator` | `agents/tdd-validator.agent.md` | TDD workflow, JUnit 5 + Mockito, coverage audit |
+| `test-coverage-engineer` | `agents/test-coverage-engineer.agent.md` | 100% branch coverage — path matrix + targeted tests |
 | `code-reviewer` | `agents/code-reviewer.agent.md` | SOLID, OWASP Top 10, Quarkus best practices |
 | `legacy-migration` | `agents/legacy-migration.agent.md` | JEE/JSF → Quarkus migration analysis |
 | `agent-architect` | `agents/agent-architect.agent.md` | Creates new agents, skills, MCP configs |
@@ -138,14 +139,17 @@ Deterministic procedure libraries — no reasoning required, just follow the ste
 
 | Skill | File | Content |
 |-------|------|---------|
-| `quarkus-backend` | `skills/quarkus-backend/SKILL.md` | REST Resource, Application Service, MapStruct, Panache, Health, Config patterns |
+| `quarkus-backend` | `skills/quarkus-backend/SKILL.md` | REST Resource, Service, MapStruct, Panache, Pagination, Async, Events, Multi-datasource |
 | `clean-architecture` | `skills/clean-architecture/SKILL.md` | Layer rules, Port pattern, ADR template, violation checklist |
-| `tdd-workflow` | `skills/tdd-workflow/SKILL.md` | JUnit 5 + Mockito patterns, test naming, TDD cycle |
+| `tdd-workflow` | `skills/tdd-workflow/SKILL.md` | JUnit 5 + Mockito 5, TDD cycle, ArgumentCaptor, Spy, Strict Stubs, Test Builders |
+| `java-test-coverage` | `skills/java-test-coverage/SKILL.md` | Path enumeration matrix, 100% branch coverage, phase-by-phase test writing |
 | `flyway-oracle` | `skills/flyway-oracle/SKILL.md` | Oracle migration patterns, 3-step NOT NULL, indexes, safe checklist |
 | `api-design` | `skills/api-design/SKILL.md` | OpenAPI 3.1 structure, REST URL rules, RFC 7807 error schema |
 | `domain-driven-design` | `skills/domain-driven-design/SKILL.md` | Aggregate, Value Object, Domain Service, Port, Domain Event patterns |
 | `legacy-analysis` | `skills/legacy-analysis/SKILL.md` | 6-phase legacy reverse-engineering procedure |
 | `agent-scaffolding` | `skills/agent-scaffolding/SKILL.md` | Agent catalog, templates for all 4 tiers, audit checklist |
+| `quarkus-observability` | `skills/quarkus-observability/SKILL.md` | Structured logging, Micrometer metrics, OpenTelemetry tracing, SmallRye Health |
+| `java-flow-analysis` | `skills/java-flow-analysis/SKILL.md` | AST-based impact analysis, call graph tracing, legacy EJB flow mapping |
 
 ---
 
@@ -156,6 +160,7 @@ Documentation for integrating live external systems:
 | MCP | File | Status |
 |-----|------|--------|
 | `oracle-official` | `mcp/oracle-official.md` | Ready — SQLcl `-mcp` mode |
+| `mssql-server` | `mcp/mssql-server.md` | Ready — `mssql-mcp-server` or `@azure/mcp` |
 | `bitbucket-corporate` | `mcp/bitbucket-corporate.md` | Ready — `@garc33/bitbucket-server-mcp-server` |
 | `sonarqube` | `mcp/sonarqube.md` | Proposed — `mcp-server-sonarqube` |
 
@@ -224,38 +229,80 @@ npm run bootstrap:ai
 
 ---
 
+## Scripts
+
+| Script | Language | Purpose |
+|--------|----------|---------|
+| `scripts/new-project.mjs` | Node.js | Bootstrap a new workspace (copies agents/skills, generates orchestrator + team leads) |
+| `scripts/analyze-java.py` | Python 3 | AST-based Java analysis: methods, branches, callers, impact set, test matrix |
+
+### analyze-java.py
+
+Requires: `pip install tree-sitter tree-sitter-language-pack`
+
+```bash
+# List all methods + branch count in a service class
+python .ai-devtoolkit/scripts/analyze-java.py methods src/main/java/.../OrderService.java
+
+# Find all callers of a method across the module
+python .ai-devtoolkit/scripts/analyze-java.py callers src/main/java OrderService.create
+
+# Change impact — what files reference OrderRepository?
+python .ai-devtoolkit/scripts/analyze-java.py impact src/main/java OrderRepository
+
+# Generate test coverage matrix — how many tests does each method need?
+python .ai-devtoolkit/scripts/analyze-java.py test-matrix src/main/java/.../OrderService.java
+```
+
+## Guardrail Template
+
+`templates/skill-guardrail.template.md` — use this to define constraints for any skill:
+- Scope limiters (what the skill is NOT for)
+- Input validators (required fields, rejected values)
+- Output validators (what the output must contain)
+- Safety rules (absolute never-do rules)
+- Escalation triggers (when to stop and ask a human)
+- Mutation budget (how many files the skill may write per run)
+
 ## Repository Structure
 
 ```
 ai-devtoolkit-java/
-├── agents/                    Generic role agent definitions
+├── agents/                       Generic role agent definitions (9 agents)
 │   ├── software-architect.agent.md
 │   ├── backend-engineer.agent.md
 │   ├── api-designer.agent.md
 │   ├── database-engineer.agent.md
 │   ├── tdd-validator.agent.md
+│   ├── test-coverage-engineer.agent.md   ← NEW: 100% branch coverage
 │   ├── code-reviewer.agent.md
 │   ├── legacy-migration.agent.md
 │   └── agent-architect.agent.md
-├── skills/                    Generic skill procedure libraries
-│   ├── quarkus-backend/SKILL.md
+├── skills/                       Generic skill procedure libraries (11 skills)
+│   ├── quarkus-backend/SKILL.md          REST, Service, Pagination, Async, Events
 │   ├── clean-architecture/SKILL.md
-│   ├── tdd-workflow/SKILL.md
+│   ├── tdd-workflow/SKILL.md             + ArgumentCaptor, Spy, Strict Stubs, Builders
+│   ├── java-test-coverage/SKILL.md       ← NEW: path matrix + systematic coverage
 │   ├── flyway-oracle/SKILL.md
 │   ├── api-design/SKILL.md
 │   ├── domain-driven-design/SKILL.md
 │   ├── legacy-analysis/SKILL.md
-│   └── agent-scaffolding/SKILL.md
-├── mcp/                       MCP server setup guides
+│   ├── agent-scaffolding/SKILL.md
+│   ├── quarkus-observability/SKILL.md    ← NEW: logging, Micrometer, OpenTelemetry
+│   └── java-flow-analysis/SKILL.md       ← NEW: AST impact + call graph analysis
+├── mcp/                          MCP server setup guides
 │   ├── oracle-official.md
+│   ├── mssql-server.md                   ← NEW: SQL Server + Azure SQL
 │   ├── bitbucket-corporate.md
 │   └── sonarqube.md
 ├── scripts/
-│   └── new-project.mjs        Project initializer CLI
+│   ├── new-project.mjs           Project initializer CLI
+│   └── analyze-java.py           ← NEW: AST analysis (tree-sitter)
 ├── templates/
-│   ├── AGENTS.md.template     Workspace instructions template
-│   └── mcp.json.template      MCP config starting point
+│   ├── AGENTS.md.template
+│   ├── mcp.json.template
+│   └── skill-guardrail.template.md       ← NEW: guardrail constraints template
 ├── docs/
-│   └── architecture.md        Detailed architecture guide
+│   └── architecture.md           Detailed architecture guide
 └── README.md
 ```

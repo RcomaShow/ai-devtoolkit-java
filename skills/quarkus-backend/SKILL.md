@@ -246,6 +246,178 @@ public class {Service}HealthCheck implements HealthCheck {
 | ACL | `data/acl/` | `AclTranslator` |
 | Mapper | `mapping/` | `Mapper` |
 
+## Pagination Pattern
+
+```java
+// Request DTO with pagination params
+public record List{Entity}Request(
+    @QueryParam("page")     @DefaultValue("0")  int page,
+    @QueryParam("pageSize") @DefaultValue("20") @Max(100) int pageSize,
+    @QueryParam("sortBy")   @DefaultValue("id") String sortBy,
+    @QueryParam("sortDir")  @DefaultValue("asc") String sortDir
+) {}
+
+// Panache paginated query
+@ApplicationScoped
+public class {Entity}EntityRepository implements PanacheRepository<{Entity}Entity, Long> {
+
+    public Page<{Entity}Entity> findAll(int page, int size, String sortBy, Sort.Direction dir) {
+        return findAll(Sort.by(sortBy, dir))
+            .page(Page.of(page, size));
+    }
+}
+
+// Response wrapper
+public record PagedResponse<T>(
+    List<T>  content,
+    long     totalElements,
+    int      totalPages,
+    int      currentPage,
+    int      pageSize,
+    boolean  hasNext,
+    boolean  hasPrevious
+) {
+    public static <T> PagedResponse<T> from(io.quarkus.panache.common.Page<T> panachePage) {
+        return new PagedResponse<>(
+            panachePage.list(),
+            panachePage.count(),
+            panachePage.pageCount(),
+            panachePage.index(),
+            panachePage.size(),
+            panachePage.hasNextPage(),
+            panachePage.hasPreviousPage()
+        );
+    }
+}
+```
+
+## Async / Reactive Pattern (Mutiny)
+
+Use when an operation may take >200ms and blocking is unacceptable:
+
+```java
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.Multi;
+
+@Path("/api/v1/{entities}/async")
+public class {Entity}AsyncResource {
+
+    @GET
+    @Path("/stream")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    @SseElementType(MediaType.APPLICATION_JSON)
+    public Multi<{Entity}Dto> stream() {
+        return {entity}Service.streamAll()
+            .map(mapper::toDto);
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Response> createAsync(@Valid Create{Entity}Request request) {
+        return {entity}Service.createAsync(request)
+            .map(dto -> Response.accepted().entity(dto).build());
+    }
+}
+
+@ApplicationScoped
+public class {Entity}Service {
+
+    @Transactional
+    public Uni<{Entity}Dto> createAsync(Create{Entity}Request request) {
+        return Uni.createFrom().item(() -> {
+            var domain = mapper.toDomain(request);
+            var saved  = {entity}Repository.save(domain);
+            return mapper.toDto(saved);
+        }).runSubscriptionOn(Infrastructure.getDefaultExecutor());
+    }
+}
+```
+
+## Event Publishing (CDI Events)
+
+For domain events within the same service:
+
+```java
+// Domain event (record — immutable)
+public record {Entity}CreatedEvent(Long id, String code, Instant occurredAt) {
+    public static {Entity}CreatedEvent of({Entity} entity) {
+        return new {Entity}CreatedEvent(
+            entity.id().value(), entity.code(), Instant.now()
+        );
+    }
+}
+
+// Service — fire event after persist
+@ApplicationScoped
+public class {Entity}Service {
+
+    @Inject Event<{Entity}CreatedEvent> entityCreatedEvent;
+
+    @Transactional
+    public {Entity}Dto create(Create{Entity}Request request) {
+        var domain = mapper.toDomain(request);
+        var saved  = {entity}Repository.save(domain);
+        entityCreatedEvent.fire({Entity}CreatedEvent.of(saved));  // synchronous
+        return mapper.toDto(saved);
+    }
+}
+
+// Observer (in same or different bean)
+@ApplicationScoped
+public class {Entity}AuditListener {
+
+    private static final Logger LOG = Logger.getLogger({Entity}AuditListener.class);
+
+    void onCreated(@Observes {Entity}CreatedEvent event) {
+        LOG.infof("Audit: {entity} created id=%d at=%s", event.id(), event.occurredAt());
+        // write audit record, notify other subsystem, etc.
+    }
+}
+```
+
+## Structured Logging in Resources
+
+```java
+private static final Logger LOG = Logger.getLogger({Entity}Resource.class);
+
+@POST
+public Response create(@Valid Create{Entity}Request request, @Context UriInfo uriInfo) {
+    LOG.debugf("POST /{entities}: code=%s", request.code());
+    var dto = {entity}Service.create(request);
+    LOG.infof("{entity} created: id=%d", dto.id());
+    var location = uriInfo.getAbsolutePathBuilder().path(dto.id().toString()).build();
+    return Response.created(location).entity(dto).build();
+}
+```
+
+See `skills/quarkus-observability/SKILL.md` for full logging, metrics, and tracing patterns.
+
+## Multi-Datasource Pattern (Oracle + MSSQL)
+
+```java
+// Named datasource for MSSQL legacy reads
+@ApplicationScoped
+@DataSource("mssql")
+public class LegacyEntityRepository implements PanacheRepository<LegacyEntity, Long> {
+    // queries against MSSQL legacy DB
+}
+
+// Default datasource (Oracle) for new domain entities
+@ApplicationScoped
+public class {Entity}EntityRepository implements PanacheRepository<{Entity}Entity, Long> {
+    // queries against Oracle
+}
+```
+
+```properties
+# application.properties
+quarkus.datasource.db-kind=oracle
+quarkus.datasource.jdbc.url=jdbc:oracle:thin:@${DB_HOST}:${DB_PORT}/${DB_SID}
+
+quarkus.datasource."mssql".db-kind=mssql
+quarkus.datasource."mssql".jdbc.url=jdbc:sqlserver://${MSSQL_HOST}:1433;databaseName=${MSSQL_DATABASE};
+```
+
 ## Anti-patterns to Reject
 
 - `@Inject` on fields — always use constructor injection
@@ -253,3 +425,6 @@ public class {Service}HealthCheck implements HealthCheck {
 - Business logic in REST resources — only delegation + HTTP mapping
 - Shared database tables between services — each service owns its tables
 - `Optional.get()` without checking — use `orElseThrow` with descriptive message
+- `@Transactional` in REST resources — belongs only in service layer
+- Returning `null` from repository methods — always return `Optional<T>` or empty list
+- Catching and swallowing exceptions — log then rethrow, or convert to domain exception

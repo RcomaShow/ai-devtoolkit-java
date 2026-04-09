@@ -231,6 +231,137 @@ verify(repo, never()).delete(any());
 verifyNoMoreInteractions(repo);
 ```
 
+## Advanced Mockito Patterns
+
+### Strict Stubs (default with MockitoExtension)
+
+`MockitoExtension.class` enforces **strict stubs**: any stub declared with `when()` that is never called fails the test.
+
+```java
+// BAD — this stub will fail if sut.create() doesn't call externalClient.check()
+when(externalClient.check(any())).thenReturn(true);
+
+// GOOD — only stub what the code actually calls
+// If in doubt, use lenient() to opt out per stub (rarely needed)
+lenient().when(externalClient.check(any())).thenReturn(true);
+```
+
+### ArgumentCaptor — Correct Pattern
+
+Always call `verify()` **before** `getValue()`:
+
+```java
+@Captor ArgumentCaptor<{Entity}> captor;
+
+@Test
+void should_saveWithCorrectStatus_when_activating() {
+    var entity = {Entity}Builder.defaults().withStatus({Status}.DRAFT).build();
+    when({entity}Repository.findById(ENTITY_ID)).thenReturn(Optional.of(entity));
+
+    sut.activate(ENTITY_ID);
+
+    // 1. verify the mock was called — this populates the captor
+    verify({entity}Repository).save(captor.capture());
+    // 2. then inspect
+    assertThat(captor.getValue().status()).isEqualTo({Status}.ACTIVE);
+}
+
+// Multiple invocations
+verify(publisher, times(3)).publish(captor.capture());
+assertThat(captor.getAllValues()).extracting({Entity}Event::type)
+    .containsExactly(EventType.CREATED, EventType.UPDATED, EventType.PUBLISHED);
+```
+
+### Answer — Dynamic Responses
+
+```java
+// Return a version of the input with a generated ID
+when({entity}Repository.save(any({Entity}.class)))
+    .thenAnswer(invocation -> {
+        var saved = invocation.getArgument(0, {Entity}.class);
+        return new {Entity}(new {Entity}Id(99L), saved.code(), saved.status());
+    });
+
+// Throw on 2nd call (retry simulation)
+when(externalClient.fetch(any()))
+    .thenReturn(result)                           // 1st call: ok
+    .thenThrow(new TimeoutException("retry"));    // 2nd call: fails
+```
+
+### Verify Call Order
+
+```java
+@Test
+void should_validateBeforePersisting() {
+    var order = inOrder(validator, {entity}Repository);
+
+    sut.create(request);
+
+    order.verify(validator).validate(request);
+    order.verify({entity}Repository).save(any());
+    order.verifyNoMoreInteractions();
+}
+```
+
+### Spy — Partial Mock
+
+Use sparingly: only when a class mixes real logic with injected dependencies:
+
+```java
+@Test
+void should_retryOnce_when_firstAttemptFails() {
+    var real   = new {Entity}Service({entity}Repository, mapper);
+    var spySut = spy(real);
+
+    doReturn(fallbackResult)
+        .when(spySut).callExternal(any());
+
+    // Normal path still runs real code except callExternal
+    var result = spySut.processWithFallback(request);
+
+    verify(spySut, times(1)).callExternal(any());
+}
+```
+
+## Test Data Builder Pattern
+
+When the same domain object is constructed in 3+ tests, use a builder:
+
+```java
+// src/test/java/com/company/{domain}/domain/model/{Entity}Builder.java
+public final class {Entity}Builder {
+
+    private {Entity}Id id       = new {Entity}Id(1L);
+    private String     code     = "CODE_DEFAULT";
+    private {Status}   status   = {Status}.ACTIVE;
+    private LocalDate  dateFrom = LocalDate.of(2024, 1, 1);
+    private LocalDate  dateTo   = LocalDate.of(2024, 12, 31);
+
+    private {Entity}Builder() {}
+
+    public static {Entity}Builder defaults() { return new {Entity}Builder(); }
+
+    public {Entity}Builder withId(long id)       { this.id = new {Entity}Id(id); return this; }
+    public {Entity}Builder withCode(String c)    { this.code = c; return this; }
+    public {Entity}Builder withStatus({Status} s){ this.status = s; return this; }
+
+    public {Entity} build() {
+        return new {Entity}(id, code, dateFrom, dateTo, status);
+    }
+}
+```
+
+Usage:
+```java
+// Minimal
+var entity = {Entity}Builder.defaults().build();
+
+// Specific scenario
+var expired = {Entity}Builder.defaults()
+    .withStatus({Status}.EXPIRED)
+    .build();
+```
+
 ## TDD Cycle
 
 1. **Red** — write a failing test that specifies the behaviour
@@ -243,3 +374,17 @@ For each acceptance criterion:
 3. Let the compiler guide interface/class creation
 4. Implement to make green
 5. Add edge case + error path tests
+
+## Test Completeness Checklist
+
+```
+[ ] One test per branch / code path (not one test per method)
+[ ] All null/empty parameters tested separately
+[ ] All exception paths tested with assertThatThrownBy
+[ ] verify() used when side effects are the point of the method
+[ ] verifyNoMoreInteractions() used for methods that should NOT call certain deps
+[ ] No Thread.sleep(), no @Disabled, no System.out.println() in tests
+[ ] Tests pass in isolation (no shared mutable state between test methods)
+[ ] MockitoExtension strict-stub violations have been addressed (not silenced with lenient())
+[ ] Test builder used for objects constructed in 3+ places
+```
