@@ -1,0 +1,24 @@
+{
+  "servers": {
+    "oracle-official": {
+      "command": "sql",
+      "args": [
+        "${env:DB_USER}/${env:DB_PASS}@${env:DB_HOST}:${env:DB_PORT}/${env:DB_SID}",
+        "-mcp"
+      ],
+      "comment": "Oracle SQLcl MCP — schema introspection. Requires SQLcl in PATH. See .ai-devtoolkit/mcp/oracle-official.md"
+    },
+    "bitbucket-corporate": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@garc33/bitbucket-server-mcp-server"
+      ],
+      "env": {
+        "BITBUCKET_URL": "${env:BITBUCKET_URL}",
+        "BITBUCKET_TOKEN": "${env:BITBUCKET_TOKEN}"
+      },
+      "comment": "Bitbucket Server MCP — PR and branch context. See .ai-devtoolkit/mcp/bitbucket-corporate.md"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+# {domain} Workspace — AI Bootstrap Rules
+
+## Scope
+- Treat this workspace root as a multi-repo shell, not as a single Git repository.
+- Detect repository folders before writing repo-local agent files.
+- Use [.ai/memory/workspace-map.json](.ai/memory/workspace-map.json) as the live workspace inventory.
+
+## Source Of Truth
+- `.github/agents/` — canonical agent definitions (Copilot workspace agents)
+- `.github/skills/` — canonical skills
+- `.github/prompts/` — canonical prompt entry points
+- `.ai/memory/` — machine-generated bootstrap inventory (workspace-map.json, mcp-registry.json)
+
+`.ai/` exists only for bootstrap operational memory. All authored assets live in `.github/`.
+
+## Domain
+- Name: {name}
+- Domain: {domain}
+- Stack: {stack}
+- Java package: {package}
+- Repositories: {repos}
+
+## Workspace Rules
+- Use this root `AGENTS.md` as the only workspace-wide instruction file for Copilot in VS Code.
+- Do not duplicate the same workspace instructions into `.github/copilot-instructions.md`.
+- Agents are authored directly in `.github/agents/`. Other adapters copy from there — never the reverse.
+- Preserve existing repo-local agent files and treat them as authoritative for their own repository.
+- After each bootstrap implementation or bootstrap review, update `AI_BOOTSTRAP_IMPROVEMENTS.md`.
+
+## Detection Contract
+1. Scan the workspace root for `.claude/`, `.cursor/`, `.github/`, `.gemini/`.
+2. Detect active processes: `cursor`, `claude`, `code`, `node`.
+3. Classify the runtime as `IDE`, `TERMINAL`, or `HYBRID`.
+4. Classify top-level folders as Git repositories or utility folders.
+5. Emit this JSON payload before making bootstrap decisions:
+
+```json
+{
+  "mode": "IDE | TERMINAL | HYBRID",
+  "primary_tool": "cursor | claude | copilot | gemini | codex",
+  "secondary_tools": []
+}
+```
+
+## Adapter Policy
+- Copilot: keep `AGENTS.md` at root, expose custom assets through `.github/agents/`, `.github/prompts/`, `.github/skills/`.
+- Claude: use `CLAUDE.md` as an alias to `AGENTS.md`; keep `.claude/agents/` as baseline adapter.
+- Gemini: keep `.gemini/antigravity/agents/` as baseline adapter.
+
+## MCP Policy
+- Read [.vscode/mcp.json](.vscode/mcp.json) before proposing new MCP servers.
+- Reuse existing MCPs first: `bitbucket-corporate`, `oracle-official`.
+- Do not add new MCP servers unless built-in capabilities are insufficient.
+
+## Safety
+- Never assume every repository should inherit workspace-level adapters automatically.
+- Do not overwrite existing repo-local CLAUDE.md, AGENTS.md, or .github assets unless explicitly requested.
