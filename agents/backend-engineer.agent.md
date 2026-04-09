@@ -16,11 +16,15 @@ Read these skills before writing code — they contain the authoritative pattern
 
 | When you need to... | Read skill |
 |---------------------|-----------|
-| Write REST resources, services, mappers, Panache repos | `quarkus-backend/SKILL.md` |
-| Write or review tests | `tdd-workflow/SKILL.md` |
-| Choose where code belongs (which layer) | `clean-architecture/SKILL.md` |
-| Design a domain aggregate or value object | `domain-driven-design/SKILL.md` |
-| Write a Flyway migration | `flyway-oracle/SKILL.md` |
+| Identify which Quarkus sub-skill applies | `skills/quarkus-backend/SKILL.md` ← **start here** |
+| Write REST endpoints, DTOs, validation, error handler | `skills/quarkus-backend/api/SKILL.md` |
+| Write Application Service, MapStruct mapper, exceptions | `skills/quarkus-backend/service/SKILL.md` |
+| Write Panache entity, repository, ACL translator, pagination | `skills/quarkus-backend/persistence/SKILL.md` |
+| Add Mutiny Uni/Multi, CDI events, SSE, Kafka | `skills/quarkus-backend/async/SKILL.md` |
+| Write or review tests | `skills/tdd-workflow/SKILL.md` |
+| Choose where code belongs (which layer) | `skills/clean-architecture/SKILL.md` |
+| Design a domain aggregate or value object | `skills/domain-driven-design/SKILL.md` |
+| Write a Flyway migration | `skills/flyway-oracle/SKILL.md` |
 
 ## Responsibilities
 
