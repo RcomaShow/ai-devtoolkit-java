@@ -1,6 +1,6 @@
 ---
 name: agent-scaffolding
-description: "Agent catalog audit and scaffolding for Java/Quarkus workspaces. Validates frontmatter completeness, ensures companion skills exist, and scaffolds missing agents from templates."
+description: 'Agent catalog audit and scaffolding for Java/Quarkus workspaces. Validates frontmatter completeness, ensures companion skills exist, and scaffolds missing agents from templates.'
 argument-hint: "Audit or scaffold action — e.g. 'audit all agents', 'scaffold team-lead for {repo}', 'add companion skill for {agent}'"
 user-invocable: true
 ---

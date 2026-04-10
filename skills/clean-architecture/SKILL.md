@@ -1,6 +1,6 @@
 ---
 name: clean-architecture
-description: "Clean Architecture patterns and ADR workflow for Java/Quarkus microservices. Reference when making architectural decisions, enforcing layer boundaries, writing ADRs, or detecting layer violations."
+description: 'Clean Architecture patterns and ADR workflow for Java/Quarkus microservices. Reference when making architectural decisions, enforcing layer boundaries, writing ADRs, or detecting layer violations.'
 argument-hint: "Arch topic — e.g. 'layer boundary check', 'ADR for DB strategy', 'dependency direction audit'"
 user-invocable: false
 ---

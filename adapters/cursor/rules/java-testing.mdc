@@ -1,0 +1,58 @@
+---
+description: JUnit 5 + Mockito 5 unit test rules for Quarkus microservices. Enforces strict mocking and 100% branch coverage discipline.
+globs: src/test/java/**/*Test.java
+alwaysApply: false
+---
+
+# Java Testing Rules
+
+## Mandatory Framework
+
+- `@ExtendWith(MockitoExtension.class)` — the ONLY class-level annotation needed.
+- **Never** use `@QuarkusTest`, `@QuarkusIntegrationTest`, Testcontainers, or RestAssured.
+- AssertJ for all assertions: `assertThat(actual).isEqualTo(expected)`.
+
+## Test Method Pattern
+
+```java
+@Test
+void should_<expectedOutcome>_when_<condition>() {
+    // Arrange — stub only what this test needs
+    when(dependency.method(arg)).thenReturn(result);
+
+    // Act
+    var actual = sut.methodUnderTest(input);
+
+    // Assert — specific values, never just assertNotNull
+    assertThat(actual.field()).isEqualTo(expectedValue);
+
+    // Verify side effects if they ARE the observable outcome
+    verify(dependency).method(expectedArg);
+}
+```
+
+## ArgumentCaptor
+
+```java
+// ALWAYS verify() BEFORE getValue()
+verify(repo).save(captor.capture());    // capture
+assertThat(captor.getValue()).isEqualTo(expected);  // then getValue()
+```
+
+## Strict Stubs
+
+MockitoExtension enforces strict stubs. Remove any `when()` stub that is not called by the test method — it will throw `UnnecessaryStubbingException`.
+
+## Coverage Goal
+
+100% branch coverage. One `@Test` per branch. Never combine two branches in one test method.
+
+## Branch Enumeration Checklist
+
+Before writing tests, enumerate every branch in the target class:
+- [ ] `if/else` — both conditions
+- [ ] `switch` — each case
+- [ ] `Optional.orElseThrow` — present and empty
+- [ ] `try/catch` — happy path and exception path
+- [ ] Loop — empty collection, single element, multi-element
+- [ ] Ternary — true and false branches

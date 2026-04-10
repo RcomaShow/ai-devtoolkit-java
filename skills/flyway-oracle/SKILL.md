@@ -1,6 +1,6 @@
 ---
 name: flyway-oracle
-description: "Flyway migration patterns for Oracle DB in Quarkus microservices. Reference when writing migration scripts, designing schema changes, creating indexes, or reviewing safe migration checklists."
+description: 'Flyway migration patterns for Oracle DB in Quarkus microservices. Reference when writing migration scripts, designing schema changes, creating indexes, or reviewing safe migration checklists.'
 argument-hint: "Migration task — e.g. 'add column to T_{TABLE}', 'create FK between {tableA} and {tableB}', 'add index for {query} query'"
 user-invocable: false
 ---

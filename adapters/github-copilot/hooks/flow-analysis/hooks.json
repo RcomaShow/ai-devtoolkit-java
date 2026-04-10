@@ -1,0 +1,10 @@
+{
+  "hooks": [
+    {
+      "event": "pre-commit",
+      "description": "Run impact analysis on staged Java files with high fan-in (>5 callers)",
+      "run": "bash .ai-devtoolkit/adapters/github-copilot/hooks/flow-analysis/scripts/flow-analysis-check.sh",
+      "failOnError": false
+    }
+  ]
+}

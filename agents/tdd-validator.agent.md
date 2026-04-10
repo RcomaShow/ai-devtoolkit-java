@@ -1,8 +1,8 @@
 ---
-name: tdd-validator
-description: "Cross-cutting TDD agent. Use to write, validate, or audit tests for any domain service in the workspace. Implements test-first workflows: derives acceptance criteria, writes failing tests, then implements to green. Invokable directly or as a sub-agent."
+name: 'TDD Validator'
+description: 'Cross-cutting TDD agent. Use to write, validate, or audit tests for any domain service in the workspace. Implements test-first workflows: derives acceptance criteria, writes failing tests, then implements to green. Invokable directly or as a sub-agent.'
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4", "Claude Sonnet 4.6"]
+model: claude-sonnet-4-6
 effort: high
 argument-hint: "Feature, acceptance criteria list, or failing test — e.g. 'write tests for {feature}', 'audit test coverage for {module}'"
 agents: [Explore]

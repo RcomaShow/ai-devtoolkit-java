@@ -1,6 +1,6 @@
 ---
-name: quarkus-backend/api
-description: "REST Resource patterns for Quarkus 3.x: JAX-RS endpoints, Bean Validation, RFC 7807 error mapping, ConfigMapping. Load this when writing or reviewing the API layer."
+name: quarkus-backend-api
+description: 'REST Resource patterns for Quarkus 3.x: JAX-RS endpoints, Bean Validation, RFC 7807 error mapping, ConfigMapping. Load this when writing or reviewing the API layer.'
 argument-hint: "API pattern needed — e.g. 'POST endpoint', 'validation record', 'error mapper'"
 user-invocable: false
 ---

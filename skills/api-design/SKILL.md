@@ -1,6 +1,6 @@
 ---
 name: api-design
-description: "OpenAPI 3.1 and REST API design patterns for Java/Quarkus microservices. Reference when designing new endpoints, reviewing API contracts, defining DTOs, writing error responses, or aligning with legacy APIs."
+description: 'OpenAPI 3.1 and REST API design patterns for Java/Quarkus microservices. Reference when designing new endpoints, reviewing API contracts, defining DTOs, writing error responses, or aligning with legacy APIs.'
 argument-hint: "API task — e.g. 'design {entity} endpoint', 'review openapi-{service}.yaml', 'define error response schema'"
 user-invocable: false
 ---

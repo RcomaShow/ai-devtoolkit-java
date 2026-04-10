@@ -1,6 +1,6 @@
 ---
-name: quarkus-backend/persistence
-description: "Persistence layer patterns for Quarkus 3.x: Panache Entity, Repository implementation, ACL Translator, pagination, multi-datasource Oracle + MSSQL. Load this when writing the data layer."
+name: quarkus-backend-persistence
+description: 'Persistence layer patterns for Quarkus 3.x: Panache Entity, Repository implementation, ACL Translator, pagination, multi-datasource Oracle + MSSQL. Load this when writing the data layer.'
 argument-hint: "Persistence pattern needed — e.g. 'Panache entity', 'repository with ACL', 'pagination', 'named datasource'"
 user-invocable: false
 ---

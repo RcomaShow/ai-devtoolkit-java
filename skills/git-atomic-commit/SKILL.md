@@ -1,6 +1,6 @@
 ---
 name: git-atomic-commit
-description: "Protocol for producing clean, atomic git commits after each completed implementation step. Load this after any implementation step that modifies files."
+description: 'Protocol for producing clean, atomic git commits after each completed implementation step. Load this after any implementation step that modifies files.'
 argument-hint: "Commit point reached — e.g. 'after creating service', 'after adding endpoint', 'after writing tests'"
 user-invocable: false
 ---

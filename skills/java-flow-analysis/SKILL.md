@@ -1,6 +1,6 @@
 ---
 name: java-flow-analysis
-description: "AST-based procedure for analyzing execution flows, dependency chains, and change impact in Java codebases. Covers both legacy (JEE/JSF/EJB) and Quarkus microservices. Use before any cross-layer change or legacy migration."
+description: 'AST-based procedure for analyzing execution flows, dependency chains, and change impact in Java codebases. Covers both legacy (JEE/JSF/EJB) and Quarkus microservices. Use before any cross-layer change or legacy migration.'
 argument-hint: "Analysis type — e.g. 'impact of changing {Entity}Repository', 'trace flow of create{Entity} use case', 'legacy EJB dependency graph'"
 user-invocable: false
 ---

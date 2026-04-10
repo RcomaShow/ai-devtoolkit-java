@@ -1,0 +1,38 @@
+{
+  "name": "quarkus-java-toolkit",
+  "description": "AI development toolkit for Quarkus 3.x + Java 21 microservices. Bundles agents, skills, and workflows for Clean Architecture, legacy migration, TDD, and observability.",
+  "version": "1.0.0",
+  "keywords": ["quarkus", "java", "clean-architecture", "tdd", "legacy-migration", "oracle", "microservices"],
+  "agents": [
+    "../../agents/orchestrator.agent.md",
+    "../../agents/backend-engineer.agent.md",
+    "../../agents/software-architect.agent.md",
+    "../../agents/legacy-migration.agent.md",
+    "../../agents/tdd-validator.agent.md",
+    "../../agents/test-coverage-engineer.agent.md",
+    "../../agents/code-reviewer.agent.md",
+    "../../agents/database-engineer.agent.md",
+    "../../agents/api-designer.agent.md",
+    "../../agents/agent-architect.agent.md"
+  ],
+  "skills": [
+    "../../skills/quarkus-backend",
+    "../../skills/quarkus-observability",
+    "../../skills/java-test-coverage",
+    "../../skills/java-flow-analysis",
+    "../../skills/git-atomic-commit",
+    "../../skills/clean-architecture",
+    "../../skills/domain-driven-design",
+    "../../skills/legacy-analysis",
+    "../../skills/flyway-oracle",
+    "../../skills/api-design",
+    "../../skills/tdd-workflow",
+    "../../skills/agent-scaffolding"
+  ],
+  "instructions": [
+    "instructions/quarkus-java.instructions.md",
+    "instructions/java-tests.instructions.md",
+    "instructions/flyway-sql.instructions.md",
+    "instructions/clean-architecture.instructions.md"
+  ]
+}

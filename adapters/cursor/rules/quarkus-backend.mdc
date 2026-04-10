@@ -1,0 +1,64 @@
+---
+description: Quarkus 3.x + Java 21 implementation rules for REST resources, services, and repositories.
+globs: src/main/java/**/*.java
+alwaysApply: false
+---
+
+# Quarkus Backend Rules
+
+## Layer Rules (apply to all Java files)
+
+- `*Entity` classes live only in `data/entity/` — never referenced from `api/` or `service/`.
+- Services inject `*Repository` port interfaces, never `*PanacheRepository` directly.
+- REST resources call services only — no business logic, no Panache calls.
+- All constructor injection — never `@Inject` on fields.
+- `@Transactional` only on service methods, never on resource methods.
+
+## REST Resource Pattern
+
+```java
+@Path("/api/v1/{entities}")
+@Tag(name = "{Entities}")
+public class {Entity}Resource {
+    private final {Entity}Service service;
+
+    {Entity}Resource({Entity}Service service) {
+        this.service = service;
+    }
+
+    @POST
+    @ResponseStatus(201)
+    public Response create(@Valid Create{Entity}Request request) {
+        var dto = service.create(request);
+        return Response.created(URI.create("/api/v1/{entities}/" + dto.id())).entity(dto).build();
+    }
+}
+```
+
+## Service Pattern
+
+```java
+@ApplicationScoped
+public class {Entity}Service {
+    @Transactional                          // write ops — always
+    public {Entity}Dto create(...) { ... }
+
+    public {Entity}Dto findById(Long id) { // read ops — no TX
+        return repository.findById(id)
+            .orElseThrow(() -> new {Entity}NotFoundException(id));
+    }
+}
+```
+
+## Naming Table
+
+| Concept | Suffix | Example |
+|---------|--------|---------|
+| REST Resource | `Resource` | `NominaResource` |
+| Service | `Service` | `NominaService` |
+| Domain Model | (none) | `Nomina` |
+| Panache Entity | `Entity` | `NominaEntity` |
+| Port Interface | `Repository` | `NominaRepository` |
+| Port Impl | `PanacheRepository` | `NominaPanacheRepository` |
+| ACL Translator | `AclTranslator` | `NominaAclTranslator` |
+| MapStruct Mapper | `Mapper` | `NominaMapper` |

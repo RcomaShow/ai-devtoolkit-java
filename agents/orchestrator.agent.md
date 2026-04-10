@@ -1,8 +1,8 @@
 ---
-name: orchestrator
-description: "Universal entry point. Reads any free-form request in Italian or English, classifies the intent, and automatically routes to the right workflow + agent + skills. No need to specify an agent — just describe what you need."
+name: 'Orchestrator'
+description: 'Universal entry point. Reads any free-form request in Italian or English, classifies the intent, and automatically routes to the right workflow + agent + skills. No need to specify an agent — just describe what you need.'
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4", "Claude Sonnet 4.6"]
+model: claude-sonnet-4-6
 effort: medium
 argument-hint: "Free-form request — e.g. 'implementa il POST per le nominas', 'migra LegacyBean a Quarkus', 'aggiungi test per NominaService'"
 agents: [software-architect, backend-engineer, legacy-migration, tdd-validator, test-coverage-engineer, code-reviewer, database-engineer, api-designer, agent-architect]

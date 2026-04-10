@@ -1,8 +1,8 @@
 ---
-name: code-reviewer
-description: "Code quality reviewer for Quarkus + Java 21 microservices. Reviews against SOLID, Clean Architecture layer rules, Quarkus best practices, OWASP Top 10 basics, and project conventions. Invokable as a sub-agent after implementation or independently for audits."
+name: 'Code Reviewer'
+description: 'Code quality reviewer for Quarkus + Java 21 microservices. Reviews against SOLID, Clean Architecture layer rules, Quarkus best practices, OWASP Top 10 basics, and project conventions. Invokable as a sub-agent after implementation or independently for audits.'
 tools: [read, search, todo, agent]
-model: ["GPT-5.4", "Claude Sonnet 4.6"]
+model: claude-sonnet-4-6
 effort: medium
 argument-hint: "File, class, or feature to review — e.g. 'review {Entity}Resource.java', 'audit {module} service layer', 'check PR for layer violations'"
 agents: [Explore]

@@ -1,6 +1,6 @@
 ---
 name: quarkus-backend
-description: "Routing hub for all Quarkus 3.x + Java 21 implementation patterns. Read this first, then load the specific sub-skill for your task."
+description: 'Routing hub for all Quarkus 3.x + Java 21 implementation patterns. Read this first, then load the specific sub-skill for your task.'
 argument-hint: "What you're building — e.g. 'REST resource', 'Panache repository', 'async Mutiny', 'CDI event'"
 user-invocable: false
 ---

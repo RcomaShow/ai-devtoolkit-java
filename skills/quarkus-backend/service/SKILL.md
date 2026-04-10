@@ -1,6 +1,6 @@
 ---
-name: quarkus-backend/service
-description: "Application Service patterns for Quarkus 3.x: @Transactional, MapStruct mappers, CDI wiring, package conventions. Load this when writing the service layer or mapping code."
+name: quarkus-backend-service
+description: 'Application Service patterns for Quarkus 3.x: @Transactional, MapStruct mappers, CDI wiring, package conventions. Load this when writing the service layer or mapping code.'
 argument-hint: "Service pattern needed — e.g. 'application service', 'MapStruct mapper', 'domain service'"
 user-invocable: false
 ---

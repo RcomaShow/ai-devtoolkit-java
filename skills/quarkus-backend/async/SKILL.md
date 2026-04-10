@@ -1,6 +1,6 @@
 ---
-name: quarkus-backend/async
-description: "Async and event-driven patterns for Quarkus 3.x: Mutiny Uni/Multi, SSE streaming, CDI domain events. Load this when adding reactive or event-driven behavior to a service."
+name: quarkus-backend-async
+description: 'Async and event-driven patterns for Quarkus 3.x: Mutiny Uni/Multi, SSE streaming, CDI domain events. Load this when adding reactive or event-driven behavior to a service.'
 argument-hint: "Async pattern needed — e.g. 'Uni return type', 'SSE stream', 'CDI observer', 'async create'"
 user-invocable: false
 ---

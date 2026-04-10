@@ -1,6 +1,6 @@
 ---
 name: quarkus-observability
-description: "Structured logging, Micrometer metrics, and OpenTelemetry tracing patterns for Quarkus 3.x microservices. Reference when adding observability to any service layer."
+description: 'Structured logging, Micrometer metrics, and OpenTelemetry tracing patterns for Quarkus 3.x microservices. Reference when adding observability to any service layer.'
 argument-hint: "Observability need — e.g. 'add metrics to service', 'structured logging', 'trace propagation'"
 user-invocable: false
 ---

@@ -1,8 +1,8 @@
 ---
-name: agent-architect
-description: "Meta-agent for creating, updating, and auditing agents, skills, MCPs, and prompts. Use when you need to add a new domain agent, encode a new procedure as a skill, register a new MCP server, or extend the agent catalog for a new service or capability."
+name: 'Agent Architect'
+description: 'Meta-agent for creating, updating, and auditing agents, skills, MCPs, and prompts. Use when you need to add a new domain agent, encode a new procedure as a skill, register a new MCP server, or extend the agent catalog for a new service or capability.'
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4", "Claude Sonnet 4.6"]
+model: claude-sonnet-4-6
 effort: high
 argument-hint: "What to create/update — e.g. 'create agent for {domain}', 'create skill for {procedure}', 'add MCP {system}', 'audit agent catalog'"
 agents: [Explore]

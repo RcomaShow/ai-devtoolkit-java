@@ -1,6 +1,6 @@
 ---
 name: legacy-analysis
-description: "Procedure for reverse-engineering legacy JEE+JSF monoliths before migrating to Quarkus microservices. Reference when analysing legacy components, mapping to Clean Architecture layers, and preparing migration plans."
+description: 'Procedure for reverse-engineering legacy JEE+JSF monoliths before migrating to Quarkus microservices. Reference when analysing legacy components, mapping to Clean Architecture layers, and preparing migration plans.'
 argument-hint: "Legacy component to analyse — e.g. 'reverse-engineer {LegacyBean}', 'map {LegacyEntity} to domain model'"
 user-invocable: false
 ---

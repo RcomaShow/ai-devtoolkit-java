@@ -1,6 +1,6 @@
 ---
 name: domain-driven-design
-description: "Domain-Driven Design patterns for Java/Quarkus microservices. Reference when designing aggregates, value objects, bounded contexts, domain events, and port interfaces."
+description: 'Domain-Driven Design patterns for Java/Quarkus microservices. Reference when designing aggregates, value objects, bounded contexts, domain events, and port interfaces.'
 argument-hint: "DDD topic — e.g. 'design aggregate for {domain}', 'identify bounded contexts', 'model domain event {event}'"
 user-invocable: false
 ---

@@ -1,6 +1,6 @@
 ---
 name: tdd-workflow
-description: "Test-Driven Development workflow using JUnit 5 + Mockito 5. NO @QuarkusTest, NO @QuarkusIntegrationTest, NO Testcontainers in unit tests. Reference when writing tests for any layer of a Quarkus microservice."
+description: 'Test-Driven Development workflow using JUnit 5 + Mockito 5. NO @QuarkusTest, NO @QuarkusIntegrationTest, NO Testcontainers in unit tests. Reference when writing tests for any layer of a Quarkus microservice.'
 argument-hint: "Test scenario — e.g. 'domain service test', 'application service mock test', 'REST resource layer test'"
 user-invocable: false
 ---

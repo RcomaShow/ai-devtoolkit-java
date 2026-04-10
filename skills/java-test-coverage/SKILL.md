@@ -1,6 +1,6 @@
 ---
 name: java-test-coverage
-description: "Systematic procedure for achieving 100% meaningful branch coverage on Java classes using JUnit 5 + Mockito 5. Includes path enumeration, test case matrix, test data builders, and advanced Mockito patterns."
+description: 'Systematic procedure for achieving 100% meaningful branch coverage on Java classes using JUnit 5 + Mockito 5. Includes path enumeration, test case matrix, test data builders, and advanced Mockito patterns.'
 argument-hint: "Class to cover — e.g. '{Entity}Service', 'REST resource with pagination'"
 user-invocable: false
 ---
