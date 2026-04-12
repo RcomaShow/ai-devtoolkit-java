@@ -1,8 +1,7 @@
 ---
-name: 'Legacy Migration'
 description: 'Cross-cutting agent for migrating legacy JEE+JSF monolith behaviour to a Quarkus microservice architecture. Use for reverse-engineering legacy logic, mapping it to Clean Architecture layers, deciding REST vs Kafka boundaries, and producing a migration plan.'
-tools: [read, search, edit, todo, agent, oracle-official/*]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
+tools: [read, search, todo, agent, oracle-official/*]
+model: ["GPT-5.4", "Claude Sonnet 4.6 (copilot)"]
 effort: high
 argument-hint: "Legacy component or feature to analyse — e.g. 'analyse {LegacyBean}', 'migrate {LegacyEndpoint} to REST', 'map JSF backing bean {X} to service layer'"
 agents: [Explore, software-architect, backend-engineer, database-engineer, tdd-validator, api-designer]

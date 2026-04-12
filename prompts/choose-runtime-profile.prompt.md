@@ -11,11 +11,11 @@ Use this guide when choosing which public agent to invoke and how much depth you
 
 - `@team-lead`
   - Use for multi-step work, broader analysis, hidden-specialist delegation, review/fix loops, architecture work, migration, and workspace bootstrap.
-  - Premium model family: `GPT-5.4`, `GPT-5.3 Codex`, `Claude Sonnet 4.6`, `Claude Opus 4.6`
+  - Frontmatter uses documented Copilot aliases: `GPT-5 (copilot)`, `Claude Sonnet 4.5 (copilot)`
 
 - `@developer`
   - Use for bounded direct execution when the scope is already clear.
-  - Smaller paid model family: `GPT-5.4 Mini`, `Claude Haiku 4.5`
+  - Inherits the active picker/default model. If your tenant exposes a smaller or faster approved model, choose it manually in the picker.
 
 ## Effort Levels
 

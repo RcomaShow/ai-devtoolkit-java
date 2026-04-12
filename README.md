@@ -2,6 +2,8 @@
 
 Copilot-first AI development toolkit for Java 17/21 + Quarkus workspaces. It is designed around two public agents by capability tier, hidden specialist delegation, self-contained skills, file-based repository memory, and a multi-repo bootstrap that stays generic instead of baking project-specific public agents into the runtime.
 
+**Current version:** see [`VERSION`](VERSION) — changelog in [`CHANGELOG.md`](CHANGELOG.md).
+
 ---
 
 ## What This Toolkit Provides
@@ -14,6 +16,7 @@ Copilot-first AI development toolkit for Java 17/21 + Quarkus workspaces. It is 
 | Workflows | `workflows/` | Analyze -> plan -> execute -> review -> fix -> finalize flows |
 | Bootstrap engine | `skills/workspace-bootstrap/scripts/bootstrap-ai-workspace.mjs` | Copilot runtime setup and workspace inventory |
 | Project generator | `scripts/new-project.mjs` | Multi-repo workspace initializer with repo-context skills and repo-memory scaffolding |
+| Toolkit health | `skills/toolkit-health/` | Self-audit: drift detection, orphan scan, broken-ref check, skill-gap analysis |
 | MCP guides | `mcp/` | Oracle, Bitbucket, SonarQube setup guidance |
 
 ---
@@ -128,8 +131,8 @@ npm run memory:refresh
 
 | Agent | Model family | Default effort | Notes |
 |-------|--------------|----------------|-------|
-| `team-lead` | `GPT-5.4`, `GPT-5.3 Codex`, `Claude Sonnet 4.6`, `Claude Opus 4.6` | `high` | Best for architecture, routing, deep review/fix loops |
-| `developer` | `GPT-5.4 Mini`, `Claude Haiku 4.5` | `medium` | Best for focused coding and local verification |
+| `team-lead` | `GPT-5 (copilot)`, `Claude Sonnet 4.5 (copilot)` | `high` | Uses documented Copilot aliases for premium orchestration |
+| `developer` | Inherits active picker/default | `medium` | Best for focused coding; choose your tenant's smaller or faster approved model manually when available |
 
 If you need a specific depth, ask explicitly for `effort low`, `effort medium`, or `effort high` in the prompt.
 
@@ -146,8 +149,8 @@ If you need a specific depth, ask explicitly for `effort low`, `effort medium`, 
 | `test-coverage-engineer` | Branch-coverage closure |
 | `code-reviewer` | Review and risk detection |
 | `bootstrap-workspace` | Workspace bootstrap and inventory repair |
-| `agent-architect` | Catalog, workflow, and MCP maintenance |
-| `orchestrator` | Hidden compatibility router |
+| `agent-architect` | Catalog, workflow, MCP maintenance, and self-evolution |
+| `orchestrator` | *(deprecated)* Compatibility shim — routes to `team-lead` / `developer` |
 
 ---
 
@@ -178,6 +181,8 @@ Representative skills:
 - `legacy-analysis`
 - `workspace-bootstrap`
 - `bootstrap-project`
+- `toolkit-health`
+- `agent-scaffolding`
 
 Core workflows used by `team-lead`:
 - `feature-implementation`
@@ -225,3 +230,11 @@ npm run memory:refresh
 ```
 
 When the toolkit changes, re-run bootstrap and the agent audit to keep the workspace runtime aligned.
+
+Agent naming note: toolkit agents now rely on filename-based names by default. Avoid custom `name:` aliases in shared assets unless the alias exactly matches the filename.
+
+To run a toolkit self-audit:
+
+```bash
+.ai-devtoolkit/skills/toolkit-health/scripts/audit-toolkit-health.ps1 -Full
+```

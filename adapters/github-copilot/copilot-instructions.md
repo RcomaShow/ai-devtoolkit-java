@@ -27,8 +27,8 @@ Use `@developer` for:
 
 ## Model And Effort Selection
 
-- Premium orchestration models on `team-lead`: `GPT-5.4`, `GPT-5.3 Codex`, `Claude Sonnet 4.6`, `Claude Opus 4.6`
-- Smaller execution models on `developer`: `GPT-5.4 Mini`, `Claude Haiku 4.5`
+- `team-lead` frontmatter pins documented Copilot aliases: `GPT-5 (copilot)`, `Claude Sonnet 4.5 (copilot)`
+- `developer` intentionally does not hardcode a `model:` alias because smaller-model names vary by tenant; use `developer` for bounded work and choose the smaller or faster approved model in the picker when available
 - If you need a specific depth, say it explicitly in the prompt: `effort low`, `effort medium`, or `effort high`
 
 ## Skill Index
@@ -53,6 +53,9 @@ Skills in `.github/skills/` contain the authoritative runtime patterns. Their su
 | `legacy-analysis` | Reverse-engineer JEE/JSF flows with evidence, layer mapping, and migration slices |
 | `flyway-oracle` | Safe Oracle schema migration patterns |
 | `api-design` | OpenAPI 3.1 design and review patterns |
+| `tdd-workflow` | TDD red-green-refactor with JUnit 5 + Mockito 5, no @QuarkusTest in unit tests |
+| `agent-scaffolding` | Agent catalog audit, frontmatter validation, companion-skill and repo-memory coverage |
+| `toolkit-health` | Systematic self-audit: source↔runtime drift, orphaned assets, broken refs, skill gaps |
 | `workspace-bootstrap` | Bootstrap workspace adapters, inventory, and MCP validation |
 | `bootstrap-project` | Phase 2 repo-context coverage, public-surface audit, and readiness checks |
 

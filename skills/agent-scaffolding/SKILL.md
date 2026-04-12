@@ -32,14 +32,12 @@ user-invocable: false
 
 ## Required Frontmatter Fields
 
-Every `.agent.md` file must have:
+Every `.agent.md` file in this toolkit is expected to have:
 
 ```yaml
 ---
-name: <kebab-case matching filename>
 description: "<one-line purpose>"
 tools: [<tool list>]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
 effort: high | medium | low
 argument-hint: "<usage hint>"
 agents: [Explore, ...]
@@ -47,16 +45,21 @@ user-invocable: true | false
 ---
 ```
 
+Notes:
+- Omit `name` unless you need a display alias. If present, it must match the filename without `.agent.md`.
+- `model` is optional. When present, use only documented Copilot aliases such as `GPT-5 (copilot)` and `Claude Sonnet 4.5 (copilot)`.
+- Smaller or faster model aliases vary by tenant. Do not hardcode them in shared toolkit assets.
+- `tools` must use built-in aliases (`read`, `search`, `edit`, `execute`, `todo`, `agent`, `web`) or MCP patterns like `oracle-official/*`.
+
 ## Public Agent Templates
 
 Use these only when editing `team-lead`, `developer`, or intentionally redefining the public surface.
 
 ```markdown
 ---
-name: team-lead
 description: "Premium orchestration entry point for the Copilot-first runtime."
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
+model: ["GPT-5 (copilot)", "Claude Sonnet 4.5 (copilot)"]
 effort: high
 argument-hint: "Describe the outcome you need"
 agents: [Explore, software-architect, backend-engineer, code-reviewer]
@@ -66,10 +69,8 @@ user-invocable: true
 
 ```markdown
 ---
-name: developer
-description: "Bounded direct execution path for smaller paid models."
+description: "Bounded direct execution path for focused tasks."
 tools: [read, search, edit, execute, todo]
-model: ["GPT-5.4 Mini", "Claude Haiku 4.5"]
 effort: medium
 argument-hint: "Describe the focused task you need"
 agents: []
@@ -77,14 +78,15 @@ user-invocable: true
 ---
 ```
 
+`developer` intentionally inherits the active picker/default model so each tenant can pair it with the smaller or faster approved model they actually expose.
+
 ## Internal Specialist Template
 
 ```markdown
 ---
-name: {agent-name}
 description: "{one-line internal role}"
 tools: [read, search, edit, todo, agent]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
+model: ["GPT-5 (copilot)", "Claude Sonnet 4.5 (copilot)"]
 effort: medium
 argument-hint: "{short usage hint}"
 agents: [Explore]
@@ -115,8 +117,9 @@ user-invocable: false
 
 - [ ] All baseline agents have `.agent.md` files in `.github/agents/`
 - [ ] All `.agent.md` files have required frontmatter fields
-- [ ] `name` matches the filename without `.agent.md`
-- [ ] `model` uses the approved premium or mini model families
+- [ ] `name` is omitted or matches the filename without `.agent.md`
+- [ ] `model` is omitted or uses documented Copilot aliases only
+- [ ] `tools` use built-in aliases or valid `<server>/*` MCP patterns
 - [ ] `team-lead` and `developer` are the only public agents
 - [ ] Internal specialists use `user-invocable: false`
 - [ ] `team-lead` references the internal specialists it should delegate to

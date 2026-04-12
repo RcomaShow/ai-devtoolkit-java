@@ -1,8 +1,7 @@
 ---
-name: 'Software Architect'
 description: 'Clean Architecture guardian for Java/Quarkus microservices. Use for architectural decisions, ADR authoring, layer boundary enforcement, cross-repo dependency analysis, and migration path design from legacy monolith to Quarkus microservices.'
 tools: [read, search, edit, todo, agent, bitbucket-corporate/*, oracle-official/*]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
+model: ["GPT-5.4 (copilot)", "Claude Sonnet 4.6 (copilot)"]
 effort: high
 argument-hint: "Architectural decision or design problem — e.g. 'design clean architecture for {domain}', 'ADR for DB access strategy', 'enforce api→service→domain→data layer'"
 agents: [Explore, backend-engineer, legacy-migration, api-designer]

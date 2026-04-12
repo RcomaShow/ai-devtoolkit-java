@@ -1,8 +1,7 @@
 ---
-name: 'Backend Engineer'
 description: 'Quarkus 3.x + Java 17/21 implementation specialist. Use to write or refactor REST resources, application services, repositories, MapStruct mappers, validators, error handlers, and Quarkus configuration. Stack-aware: RESTEasy Reactive, Panache, Bean Validation, SmallRye OpenAPI.'
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
+model: ["GPT-5.4", "Claude Sonnet 4.6 (copilot)"]
 effort: medium
 argument-hint: "Implementation task — e.g. 'implement {Entity}Resource POST endpoint', 'refactor {Domain}Service to use port pattern', 'add MapStruct mapper for {Entity}DTO'"
 agents: [Explore, tdd-validator, code-reviewer]

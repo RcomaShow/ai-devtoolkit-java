@@ -70,12 +70,19 @@ if (dryRun) {
   console.log('[DRY-RUN] Reporting planned changes only — no files will be written.\n');
 }
 
+// Read toolkit version
+const versionFile = path.join(TOOLKIT_ROOT, 'VERSION');
+const toolkitVersion = fs.existsSync(versionFile)
+  ? fs.readFileSync(versionFile, 'utf8').trim()
+  : 'unknown';
+
 console.log(`Initializing workspace: ${name}`);
 console.log(`  Domain:   ${domain}`);
 console.log(`  Repos:    ${repos.join(', ') || '(none — add manually later)'}`);
 console.log(`  Package:  ${javaPackage}`);
 console.log(`  Stack:    ${stack}`);
 console.log(`  Java:     ${javaVersion}`);
+console.log(`  Toolkit:  v${toolkitVersion}`);
 console.log('');
 
 const results = [];
@@ -393,6 +400,7 @@ ${repos.map(repo => `- \`${repo}/.github/memory/\``).join('\n') || '- Add repo-l
 - Stack: ${stack}
 - Java version: ${javaVersion}
 - Java package: ${javaPackage}
+- Toolkit version: ${toolkitVersion}
 
 ## Repositories
 ${repos.map(repo => `- \`${repo}\``).join('\n') || '- (add repositories here)'}
@@ -432,7 +440,8 @@ async function generatePackageJson() {
       'bootstrap:agents': 'powershell -NoProfile -NonInteractive -File .github/skills/agent-scaffolding/scripts/scaffold-agents.ps1',
       'bootstrap:agents:audit': 'powershell -NoProfile -NonInteractive -File .github/skills/agent-scaffolding/scripts/scaffold-agents.ps1 -AuditOnly',
       'bootstrap:project': 'powershell -NoProfile -NonInteractive -File .github/skills/bootstrap-project/scripts/bootstrap-project.ps1',
-      'memory:refresh': 'node .github/skills/repo-memory/scripts/refresh-repo-memory.mjs --all'
+      'memory:refresh': 'node .github/skills/repo-memory/scripts/refresh-repo-memory.mjs --all',
+      'toolkit:health': 'powershell -NoProfile -NonInteractive -File .github/skills/toolkit-health/scripts/audit-toolkit-health.ps1 -Full'
     }
   }, null, 2) + '\n';
 

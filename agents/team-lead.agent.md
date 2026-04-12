@@ -1,8 +1,7 @@
 ---
-name: team-lead
 description: 'Premium orchestration agent for the Copilot-first toolkit. Owns intake, analysis, planning, delegation, review, and fix loops across feature work, bugs, refactors, performance work, migration, and bootstrap tasks.'
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
+model: ["GPT-5.4 (copilot)", "Claude Sonnet 4.6 (copilot)"]
 effort: high
 argument-hint: "Describe the outcome you need — e.g. 'implement a new endpoint', 'fix a failing service', 'refactor this module', 'optimize this query', 'bootstrap the workspace'"
 agents: [Explore, software-architect, backend-engineer, legacy-migration, tdd-validator, test-coverage-engineer, code-reviewer, database-engineer, api-designer, bootstrap-workspace, agent-architect, orchestrator]
@@ -42,6 +41,7 @@ Always run this loop unless the user explicitly asks for a narrower action:
 | Repository memory, context compression, repo operating notes | direct | `agent-architect` | `skills/repo-memory/SKILL.md` |
 | Workspace bootstrap, catalog repair, MCP readiness | direct | `bootstrap-workspace` | `skills/workspace-bootstrap/SKILL.md` |
 | Toolkit maintenance, new skill/agent design | direct | `agent-architect` | `skills/agent-scaffolding/SKILL.md` |
+| Toolkit health audit, drift detection, self-evolution | direct | `agent-architect` | `skills/toolkit-health/SKILL.md` |
 
 ## Intake Rules
 

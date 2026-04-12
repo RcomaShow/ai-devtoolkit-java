@@ -1,7 +1,7 @@
 {
   "name": "quarkus-java-toolkit",
   "description": "Copilot-first AI development toolkit for Quarkus 3.x + Java 17/21 workspaces. Exposes two public agents by capability tier, file-based repo memory, hidden specialists, workflows, bootstrap automation, and colocated skill assets.",
-  "version": "1.0.0",
+  "version": "0.5.1",
   "keywords": ["quarkus", "java17", "java21", "clean-architecture", "tdd", "legacy-migration", "oracle", "microservices", "kafka", "repo-memory"],
   "agents": [
     "../../agents/team-lead.agent.md",
@@ -27,7 +27,8 @@
     "../../skills/tdd-workflow",
     "../../skills/agent-scaffolding",
     "../../skills/workspace-bootstrap",
-    "../../skills/bootstrap-project"
+    "../../skills/bootstrap-project",
+    "../../skills/toolkit-health"
   ],
   "instructions": [
     "instructions/quarkus-java.instructions.md",

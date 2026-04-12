@@ -1,8 +1,7 @@
 ---
-name: 'Test Coverage Engineer'
 description: 'Achieves 100% meaningful branch coverage on existing Java classes. Analyzes code paths, builds a test matrix, and writes targeted JUnit 5 + Mockito tests. Distinct from tdd-validator: works on existing code, not TDD cycles.'
-tools: [read, search, edit, todo]
-model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
+tools: [read, search, edit, execute]
+model: ["GPT-5.4 (copilot)", "Claude Sonnet 4.6 (copilot)"]
 effort: high
 argument-hint: "Class or method to cover — e.g. '{Entity}Service', '{Domain}DomainService.process()'"
 agents: [Explore]
