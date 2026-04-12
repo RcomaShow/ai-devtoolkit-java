@@ -1,16 +1,22 @@
 {
   "name": "quarkus-java-toolkit",
-  "description": "Copilot-first AI development toolkit for Quarkus 3.x + Java 17/21 workspaces. Exposes one public team-lead agent backed by internal specialists, workflows, bootstrap automation, and colocated skill assets.",
+  "description": "Copilot-first AI development toolkit for Quarkus 3.x + Java 17/21 workspaces. Exposes two public agents by capability tier, file-based repo memory, hidden specialists, workflows, bootstrap automation, and colocated skill assets.",
   "version": "1.0.0",
-  "keywords": ["quarkus", "java17", "java21", "clean-architecture", "tdd", "legacy-migration", "oracle", "microservices"],
+  "keywords": ["quarkus", "java17", "java21", "clean-architecture", "tdd", "legacy-migration", "oracle", "microservices", "kafka", "repo-memory"],
   "agents": [
-    "../../agents/team-lead.agent.md"
+    "../../agents/team-lead.agent.md",
+    "../../agents/developer.agent.md"
   ],
   "skills": [
     "../../skills/quarkus-backend",
+    "../../skills/quarkus-dev",
+    "../../skills/fetch-api",
+    "../../skills/quarkus-logs-analyzer",
+    "../../skills/postman-collections",
     "../../skills/quarkus-observability",
     "../../skills/java-test-coverage",
     "../../skills/java-flow-analysis",
+    "../../skills/repo-memory",
     "../../skills/java-best-practices",
     "../../skills/git-atomic-commit",
     "../../skills/clean-architecture",

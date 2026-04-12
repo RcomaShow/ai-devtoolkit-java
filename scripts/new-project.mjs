@@ -20,8 +20,9 @@
  *   --java        Java profile to target (17 or 21, default: 21)
  *   --dry-run     Print planned changes without writing files
  *
- * The generated workspace exposes one public Copilot agent: `team-lead`.
- * Repository-specific context is captured in `.github/skills/{name}-{repo}/` skill folders.
+ * The generated workspace exposes two public Copilot agents: `team-lead` and `developer`.
+ * Repository-specific context is captured in `.github/skills/{name}-{repo}/` skill folders
+ * and in repo-local `.github/memory/` folders for compact live context.
  */
 
 import fs from 'fs';
@@ -122,6 +123,10 @@ async function copyTextFile(srcFile, dstFile) {
 }
 
 async function copyDirectoryTree(srcDir, dstDir, rootDir = srcDir) {
+  if (path.basename(srcDir) === '__pycache__') {
+    return;
+  }
+
   if (srcDir !== rootDir && fs.existsSync(path.join(srcDir, 'SKILL.md'))) {
     return;
   }
@@ -136,6 +141,9 @@ async function copyDirectoryTree(srcDir, dstDir, rootDir = srcDir) {
     const dst = path.join(dstDir, entry.name);
     if (entry.isDirectory()) {
       await copyDirectoryTree(src, dst, rootDir);
+      continue;
+    }
+    if (entry.name.endsWith('.pyc')) {
       continue;
     }
     await copyTextFile(src, dst);
@@ -207,6 +215,65 @@ function generateDomainRuleTemplate() {
 `;
 }
 
+function generateRepoMemoryContext(repoName) {
+  return `# ${repoName} Repository Memory
+
+Keep this file compact. It is the stable, developer-owned memory for this repository.
+
+## Mission
+
+<!-- What this repository owns in the domain -->
+
+## Primary Entry Points
+
+<!-- REST resources, scheduled jobs, message listeners, batch entrypoints, or XHTML views -->
+
+## Known Traps
+
+<!-- Validation quirks, legacy mismatches, migration hazards, or operational surprises -->
+
+## Business Notes Worth Reusing
+
+<!-- Facts that should not be rediscovered in every conversation -->
+
+## References
+
+- Companion context skill: .github/skills/${name}-${repoName.replace(/[-_]/g, '-')}/SKILL.md
+- Generated dependency map: .github/memory/dependencies.md
+- Generated recent changes: .github/memory/recent-changes.md
+`;
+}
+
+function generateRepoMemoryDependenciesPlaceholder(repoName) {
+  return `# ${repoName} Dependencies
+
+> Generated file. Refresh with: npm run memory:refresh
+
+## Summary
+
+- Pending refresh.
+
+## Build And Modules
+
+- Pending refresh.
+
+## Integration Signals
+
+- Pending refresh.
+`;
+}
+
+function generateRepoMemoryRecentChangesPlaceholder(repoName) {
+  return `# ${repoName} Recent Changes
+
+> Generated file. Refresh with: npm run memory:refresh
+
+## Latest Snapshot
+
+- Pending refresh.
+`;
+}
+
 // --- Copy toolkit agents ---------------------------------------------------
 
 async function copyAgents() {
@@ -240,6 +307,22 @@ async function copySkills() {
   }
 }
 
+async function copyPrompts() {
+  const promptSrc = path.join(TOOLKIT_ROOT, 'prompts');
+  const promptDst = path.join(WORKSPACE_ROOT, '.github', 'prompts');
+  await ensureDir(promptDst);
+
+  if (!fs.existsSync(promptSrc)) {
+    return;
+  }
+
+  const entries = await fsp.readdir(promptSrc, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    await copyTextFile(path.join(promptSrc, entry.name), path.join(promptDst, entry.name));
+  }
+}
+
 // --- Generate repository context skills -----------------------------------
 
 async function generateRepositoryContexts() {
@@ -249,6 +332,21 @@ async function generateRepositoryContexts() {
     await writeFile(path.join(skillRoot, 'SKILL.md'), generateDomainSkillContent(repo));
     await writeFile(path.join(skillRoot, 'references', 'guardrails.md'), generateDomainGuardrails(repo));
     await writeFile(path.join(skillRoot, 'assets', 'domain-rule.template.md'), generateDomainRuleTemplate());
+  }
+}
+
+async function generateRepositoryMemory() {
+  for (const repo of repos) {
+    const repoRoot = path.join(WORKSPACE_ROOT, repo);
+    if (!fs.existsSync(repoRoot) || !fs.lstatSync(repoRoot).isDirectory()) {
+      results.push({ path: rel(repoRoot), status: 'skipped-repo-missing' });
+      continue;
+    }
+
+    const memoryRoot = path.join(repoRoot, '.github', 'memory');
+    await writeFile(path.join(memoryRoot, 'context.md'), generateRepoMemoryContext(repo));
+    await writeFile(path.join(memoryRoot, 'dependencies.md'), generateRepoMemoryDependenciesPlaceholder(repo));
+    await writeFile(path.join(memoryRoot, 'recent-changes.md'), generateRepoMemoryRecentChangesPlaceholder(repo));
   }
 }
 
@@ -266,6 +364,7 @@ async function generateAgentsMd() {
 ## Scope
 - Treat this workspace root as a multi-repo shell, not as a single Git repository.
 - Detect repository folders before writing repo-local agent files.
+- Use repo-local \.github/memory/ only for compact repository memory, not for duplicating the workspace runtime.
 - Use [.ai/memory/workspace-map.json](.ai/memory/workspace-map.json) as the live workspace inventory.
 
 ## Source Of Truth
@@ -273,14 +372,20 @@ async function generateAgentsMd() {
 - \`.github/skills/\` — canonical runtime skills and colocated assets
 - \`.github/prompts/\` — canonical prompt entry points
 - \`.ai/memory/\` — machine-generated bootstrap inventory
+- \`<repo>/.github/memory/\` — compact repo-local memory for stable facts and live technical context
 
 Tooling assets originate from \`.ai-devtoolkit/\`, but runtime discovery happens from the workspace-local \`.github/\` and root instruction files only.
 
 ## Public Copilot Surface
-- \`@team-lead\` — the only public agent. It owns analysis, planning, internal specialist delegation, review, and fix loops.
+- \`@team-lead\` — premium orchestration across hidden specialists and workflow-driven review/fix loops.
+- \`@developer\` — bounded direct execution path for smaller paid models without sub-agent delegation.
+- Repository context is split between workspace repo skills and repo-local memory files.
 
 ## Repository Context Skills
 ${repos.map(repo => `- \`.github/skills/${name}-${repo.replace(/[-_]/g, '-')}/SKILL.md\``).join('\n') || '- Add repository context skills as repositories are onboarded.'}
+
+## Repository Memory
+${repos.map(repo => `- \`${repo}/.github/memory/\``).join('\n') || '- Add repo-local memory folders as repositories are onboarded.'}
 
 ## Domain
 - Name: ${name}
@@ -300,6 +405,7 @@ ${repos.map(repo => `- \`${repo}\``).join('\n') || '- (add repositories here)'}
 ## Safety
 - Never overwrite existing repo-local AGENTS.md or .github assets without explicit request.
 - Do not assume every repository should inherit workspace-level adapters automatically.
+- Do not duplicate workspace agents or shared skills inside repo-local .github; repo-local .github/memory is the approved repo-memory surface.
 `;
 
   await writeFile(agentsMdPath, content);
@@ -325,7 +431,8 @@ async function generatePackageJson() {
       'bootstrap:security:audit': 'powershell -NoProfile -NonInteractive -File .github/skills/workspace-bootstrap/scripts/audit-mcp-secrets.ps1',
       'bootstrap:agents': 'powershell -NoProfile -NonInteractive -File .github/skills/agent-scaffolding/scripts/scaffold-agents.ps1',
       'bootstrap:agents:audit': 'powershell -NoProfile -NonInteractive -File .github/skills/agent-scaffolding/scripts/scaffold-agents.ps1 -AuditOnly',
-      'bootstrap:project': 'powershell -NoProfile -NonInteractive -File .github/skills/bootstrap-project/scripts/bootstrap-project.ps1'
+      'bootstrap:project': 'powershell -NoProfile -NonInteractive -File .github/skills/bootstrap-project/scripts/bootstrap-project.ps1',
+      'memory:refresh': 'node .github/skills/repo-memory/scripts/refresh-repo-memory.mjs --all'
     }
   }, null, 2) + '\n';
 
@@ -337,7 +444,9 @@ async function generatePackageJson() {
 async function main() {
   await copyAgents();
   await copySkills();
+  await copyPrompts();
   await generateRepositoryContexts();
+  await generateRepositoryMemory();
   await generateAgentsMd();
   await generatePackageJson();
 
@@ -354,12 +463,15 @@ async function main() {
 
   if (!dryRun && created > 0) {
     console.log('\nNext steps:');
-    console.log('  1. Review .github/agents/team-lead.agent.md and keep it as the only public entry point');
+    console.log('  1. Review .github/agents/team-lead.agent.md for premium orchestration and .github/agents/developer.agent.md for mini-model execution');
     console.log('  2. Fill in repository concepts, templates, and guardrails in .github/skills/{name}-*/');
-    console.log('  3. Review AGENTS.md for workspace-specific operating rules');
-    console.log('  4. Run: npm run bootstrap:ai');
-    console.log('  5. Run: npm run bootstrap:security:audit');
-    console.log('  6. Configure .vscode/mcp.json with oracle-official and bitbucket-corporate');
+    console.log('  3. Fill in <repo>/.github/memory/context.md with stable repo facts and traps');
+    console.log('  4. Review .github/prompts/choose-runtime-profile.prompt.md for model and effort selection guidance');
+    console.log('  5. Review AGENTS.md for workspace-specific operating rules');
+    console.log('  6. Run: npm run bootstrap:ai');
+    console.log('  7. Run: npm run memory:refresh');
+    console.log('  8. Run: npm run bootstrap:security:audit');
+    console.log('  9. Configure .vscode/mcp.json with oracle-official and bitbucket-corporate');
   }
 }
 

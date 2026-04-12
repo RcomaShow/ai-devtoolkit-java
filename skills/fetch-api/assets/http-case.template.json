@@ -1,0 +1,14 @@
+{
+  "method": "POST",
+  "uri": "http://localhost:8080/nomina-trasporto/example",
+  "compareUri": "https://gateway.example.com/nba/nomina-trasporto/example",
+  "expectedStatus": 200,
+  "headers": {
+    "Authorization": "Bearer ${env:AUTH_TOKEN}",
+    "X-jarvis-transactionId": "tx-local",
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  "bodyFile": ".\\tests\\component\\request.json",
+  "logFile": ".\\target\\quarkus.log"
+}

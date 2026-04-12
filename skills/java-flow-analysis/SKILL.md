@@ -1,17 +1,17 @@
 ---
 name: java-flow-analysis
-description: 'AST-based procedure for analyzing execution flows, dependency chains, and change impact in Java codebases. Covers both legacy (JEE/JSF/EJB) and Quarkus microservices. Use before any cross-layer change or legacy migration.'
-argument-hint: "Analysis type — e.g. 'impact of changing {Entity}Repository', 'trace flow of create{Entity} use case', 'legacy EJB dependency graph'"
+description: 'AST-based procedure for analyzing execution flows, dependency chains, and change impact in Java codebases. Covers both legacy (JEE/JSF/EJB) and Quarkus microservices, including XHTML-first tracing across layers.'
+argument-hint: "Analysis type — e.g. 'impact of changing {Entity}Repository', 'trace flow of create{Entity} use case', 'xhtml-first trace for {view}.xhtml'"
 user-invocable: false
 ---
 
 # Java Flow Analysis — AST · Dependency · Impact
 
 > **When to use this skill:**
-> - Before modifying a class used by many others (impact analysis)
-> - When tracing a business operation end-to-end (flow tracing)
-> - During legacy reverse-engineering (call graph of EJBs/DAOs)
-> - When identifying what breaks if an interface changes
+> - Before modifying a class used by many others
+> - When tracing a business operation end-to-end
+> - During legacy reverse-engineering from a JSF/XHTML page
+> - When identifying horizontal dependencies or vertical layer crossings
 
 ---
 
@@ -20,242 +20,197 @@ user-invocable: false
 | Term | Meaning |
 |------|---------|
 | **Call graph** | Directed graph: node = method, edge = calls |
-| **Dependency graph** | Directed graph: node = class, edge = depends on (imports, field, parameter type) |
+| **Dependency graph** | Directed graph: node = class, edge = depends on (imports, fields, constructor parameters) |
+| **Vertical dependency** | Edge that crosses layers: XHTML → Bean → Service → Repository → Entity/External |
+| **Horizontal dependency** | Edge inside the same layer, often a smell when it fans out heavily |
 | **Impact set** | All classes that must be reviewed or retested when class X changes |
-| **Fan-in** | Number of callers of a method — high fan-in = high impact when changed |
-| **Fan-out** | Number of dependencies of a class — high fan-out = complex, hard to test |
-| **Leaf method** | A method that calls no other domain methods — easiest to test in isolation |
-| **Entry point** | REST Resource method, MDB listener, Scheduled job — where flows start |
-| **ACL boundary** | Anti-Corruption Layer between legacy/external data model and domain model |
+| **Fan-in** | Number of callers of a method or class |
+| **Fan-out** | Number of direct dependencies of a class |
+| **Entry point** | REST resource, scheduled job, message listener, or JSF/XHTML view |
+| **ACL boundary** | Translation boundary between legacy/external structures and domain model |
+
+---
+
+## Analysis Commands
+
+The canonical script now lives beside this skill at `.github/skills/java-flow-analysis/scripts/analyze-java.py`. The toolkit wrapper `.ai-devtoolkit/scripts/analyze-java.py` remains available for compatibility.
+
+```bash
+# Install dependencies once
+pip install tree-sitter tree-sitter-language-pack
+
+# Windows alternative
+py -3 -m pip install tree-sitter tree-sitter-language-pack
+
+# List methods with branch count
+python .github/skills/java-flow-analysis/scripts/analyze-java.py methods src/main/java/com/company/{domain}/service/{Entity}Service.java
+
+# Find all callers of a method across a module
+python .github/skills/java-flow-analysis/scripts/analyze-java.py callers src/main/java {Entity}Service.create
+
+# Full impact set for a class
+python .github/skills/java-flow-analysis/scripts/analyze-java.py impact src/main/java {Entity}Repository
+
+# Direct dependency profile for one class
+python .github/skills/java-flow-analysis/scripts/analyze-java.py deps src/main/java/com/company/{domain}/service/{Entity}Service.java
+
+# XHTML-first flow trace: view -> bean -> downstream layers
+python .github/skills/java-flow-analysis/scripts/analyze-java.py legacy-xhtml src/main/java src/main/webapp/pages/{feature}/{view}.xhtml
+
+# Branch-oriented test matrix
+python .github/skills/java-flow-analysis/scripts/analyze-java.py test-matrix src/main/java/com/company/{domain}/service/{Entity}Service.java
+```
 
 ---
 
 ## Patterns
 
-### 1 — Static Impact Analysis (grep-based, no tooling required)
+### 1 — Static Impact Analysis First
 
-Use when you need to find callers quickly without installing tree-sitter.
+Use text search before AST analysis. It is faster and often sufficient.
 
 ```bash
-# Step 1: Find all direct callers of a class
 grep -rn "{ClassName}" src/ --include="*.java" | grep -v "test/"
-
-# Step 2: Find all direct callers of a specific method
 grep -rn "\.{methodName}(" src/ --include="*.java"
-
-# Step 3: Find all implementations of an interface (ports)
 grep -rn "implements {InterfaceName}" src/ --include="*.java"
-
-# Step 4: Find all injections of a type (CDI, Spring, field injection)
-grep -rn "@Inject\|@Autowired" src/ --include="*.java" -A1 | grep "{ClassName}"
-
-# Step 5: Find all usages in test code
+grep -rn "@Inject\|@Autowired\|@EJB" src/ --include="*.java" -A1 | grep "{ClassName}"
 grep -rn "{ClassName}" src/test --include="*.java"
 ```
 
-**Impact matrix output** — fill after grep:
+Only move to AST mode when the grep result is too noisy, the codebase is large, or the entrypoint is an XHTML view.
 
-```markdown
-## Impact Matrix — Changing {ClassName}
+### 2 — AST Dependency Profile
 
-| Impacted Class | File | Impact Type | Action Needed |
-|---------------|------|-------------|---------------|
-| {CallerA} | service/{CallerA}.java | direct caller | retest |
-| {CallerB} | api/{CallerB}Resource.java | indirect (via service) | review signature |
-| {CallerC}Test | test/.../{CallerA}Test.java | test — mock of this class | update mock |
-```
+Run `deps` on the class you want to change before editing it.
 
-### 2 — AST-Based Analysis (tree-sitter Python script)
+Expected output fields:
+- `layer`: inferred layer such as `backing-bean`, `service`, `repository`, `entity`
+- `dependencies`: direct Java dependencies extracted from fields, constructors, and imports
+- `bean_names`: JSF/CDI names that can be referenced by XHTML
+- `method_count`: quick sizing signal before deeper review
 
-For large codebases (100+ files), use the Python script:
-
-```bash
-# Install dependencies
-pip install tree-sitter tree-sitter-language-pack
-
-# List all methods in a class with branch count
-python .ai-devtoolkit/scripts/analyze-java.py methods src/main/java/com/company/{domain}/service/{Entity}Service.java
-
-# Find all callers of a method across a module
-python .ai-devtoolkit/scripts/analyze-java.py callers src/main/java {Entity}Service.create
-
-# Find all classes that reference {ClassName} (full impact set)
-python .ai-devtoolkit/scripts/analyze-java.py impact src/main/java {Entity}Repository
-
-# Generate a test coverage matrix (branches per method)
-python .ai-devtoolkit/scripts/analyze-java.py test-matrix src/main/java/com/company/{domain}/service/{Entity}Service.java
-```
+Use this to decide whether the class is:
+- safe to modify in isolation,
+- part of a wider migration slice,
+- a candidate for extraction because of high fan-out.
 
 ### 3 — Quarkus Flow Trace (top-down)
 
-Procedure for tracing a complete business operation:
+Procedure for a standard Quarkus use case:
 
-```
+```text
 Step 1 — Identify the REST entry point
   Read: api/{Entity}Resource.java
-  Find: method name that handles the use case (e.g. POST /create)
-  Note: request type, validation annotations
+  Note: request DTO, validation annotations, response contract
 
-Step 2 — Follow the service call
-  Read: service/{Entity}Service.java (or DomainService)
-  Find: business logic, conditional branches, calls to repositories/ports
-  Note: @Transactional boundary
+Step 2 — Follow service orchestration
+  Read: service/{Entity}Service.java
+  Note: branch points, transaction boundary, repository or external calls
 
-Step 3 — Follow each port call
-  Read: domain/port/{Entity}Repository.java (interface)
-  Find: implementation in data/repository/{Entity}PanacheRepository.java
-  Note: database operations, ACL usage
+Step 3 — Follow ports and implementations
+  Read: domain/port/{Entity}Repository.java
+  Read: data/repository/{Entity}PanacheRepository.java
 
-Step 4 — Follow the ACL
+Step 4 — Follow translators and ACL boundaries
   Read: data/acl/{Entity}AclTranslator.java
-  Note: entity fields mapped, format conversions, null handling
+  Note: schema mapping, enum conversions, null handling
 
-Step 5 — Build the flow diagram
-
-  POST /api/v1/{entities}
-       │
-       ▼ Create{Entity}Request (Bean Validation)
-  {Entity}Resource.create()
-       │
-       ▼ mapper.toDomain(request) → {Entity}
-  {Entity}Service.create()   [@Transactional]
-       │
-       ├─▶ {Entity}Repository.save(domain)       [port interface]
-       │         │
-       │         ▼  ACL: {Entity}AclTranslator.toEntity()
-       │    {Entity}PanacheRepository.save()
-       │         │
-       │         ▼  Panache: persist({Entity}Entity)
-       │    Oracle DB: INSERT INTO T_{ENTITY}
-       │
-       └─▶ mapper.toDto(saved) → {Entity}Dto
-       │
-       ▼
-  Response 201 Created + Location header
+Step 5 — Record the vertical flow
+  Resource -> Service -> Repository/Port -> ACL -> Entity/DB
 ```
 
-Step 6 — Identify cross-cutting concerns in the flow:
-```
-[ ] Where is the transaction boundary? (exactly one @Transactional, in service layer)
-[ ] Where is validation? (API boundary only, not domain)
-[ ] Where is error mapping? (ExceptionMapper, not scattered)
-[ ] Where is logging? (service + resource, not in ACL/mapper)
-[ ] Where is metrics instrumentation? (service methods)
-```
+### 4 — XHTML-First Legacy Flow Trace
 
-### 4 — Legacy JEE/EJB Flow Trace (bottom-up)
+When a legacy use case starts from a JSF page, begin from the view instead of from the database.
 
-For legacy systems without Clean Architecture, start from the data:
+```text
+Step 1 — Read the XHTML page
+  Extract EL bindings: #{bean.property}, #{bean.action}, #{bean.subBean.value}
 
-```
-Step 1 — Map the database tables
-  Query: SELECT TABLE_NAME FROM USER_TABLES WHERE TABLE_NAME LIKE 'T_{ENTITY}%'
-  Identify: primary table, lookup tables, child tables
+Step 2 — Run the XHTML trace
+  analyze-java.py legacy-xhtml <source-root> <view.xhtml>
 
-Step 2 — Find DAO/Repository classes
-  Search: grep -rn "SELECT.*FROM T_{ENTITY}" src/ --include="*.java"
-  Identify: DAO classes, named queries, stored procedure calls
+Step 3 — Review the output sections
+  resolvedEntryBeans      -> bean names mapped to concrete Java classes
+  unresolvedBeans         -> EL names without a safe Java match
+  verticalLayers          -> layer-by-layer nodes touched by the flow
+  verticalEdges           -> boundary crossings between layers
+  horizontalDependencies  -> same-layer dependencies worth reviewing
+  ambiguousDependencies   -> classes with multiple possible targets
 
-Step 3 — Find EJB/Service callers of the DAO
-  grep -rn "inject.*{DaoClass}\|@EJB.*{DaoClass}" src/ --include="*.java"
-
-Step 4 — Find UI/WS callers of the EJB
-  grep -rn "{EjbClass}" src/ --include="*.java"
-  Search for: @ManagedBean, @Named (JSF), @WebService, @Path (JAX-RS)
-
-Step 5 — Build legacy call chain
-
-  JSF Page ({entity}List.xhtml)
-       │
-       ▼ @ManagedBean / @Named
-  {Entity}BackingBean.search()
-       │ @EJB
-       ▼
-  {Entity}EjbService.findByCriteria()
-       │ @EJB
-       ▼
-  {Entity}Dao.findByCriteria(Connection)
-       │
-       ▼
-  SQL: SELECT ... FROM T_{ENTITY} WHERE ...
-
-Step 6 — Identify migration targets
-  For each legacy class, record:
-  [ ] Does it contain business logic that must move to domain service?
-  [ ] Does it combine multiple concerns (UI + business + data)?
-  [ ] What tables does it own vs read from other services?
-  [ ] Are there stored procedures that need to move to Flyway migrations?
+Step 4 — Validate the trace manually
+  Open the resolved backing bean, then confirm:
+  - invoked methods
+  - injected EJB/service/DAO fields
+  - repository/entity touchpoints
+  - external clients and side effects
 ```
 
-### 5 — Dependency Fan-in / Fan-out Analysis
+Use this pattern when the user asks to “partire da un file xhtml e capire ogni layer”. That is now a first-class workflow, not an ad hoc investigation.
 
-Classify every class in the module before planning a refactor:
+### 5 — Horizontal vs Vertical Dependency Review
+
+Classify the trace before proposing code movement.
 
 ```markdown
-## Dependency Profile — {Module Name}
+## Dependency Review — {UseCase}
 
-| Class | Fan-in (callers) | Fan-out (deps) | Risk Category |
-|-------|-----------------|----------------|---------------|
-| {Entity}Repository | 8 | 1 | HIGH FAN-IN — test thoroughly before changing |
-| {Entity}Service | 3 | 4 | MEDIUM — standard service shape |
-| {Entity}Resource | 1 | 2 | LOW — entry point, safe to modify |
-| {Complex}DomainService | 2 | 7 | HIGH FAN-OUT — refactor candidate |
+### Vertical Flow
+- XHTML `{view}.xhtml` -> `{Bean}`
+- `{Bean}` -> `{Service}`
+- `{Service}` -> `{Repository}`
+- `{Repository}` -> `{Entity}` / Oracle
 
-Risk Categories:
-- HIGH FAN-IN (>5 callers): Changes break many callers. Require full test sweep + migration plan.
-- HIGH FAN-OUT (>5 deps): Hard to unit test. Consider extracting responsibilities.
-- HIGH BOTH: architectural smell — class is doing too much.
+### Horizontal Dependencies
+- `{Bean}` -> `{OtherBean}`  ← smell, UI layer coupling
+- `{Service}` -> `{OtherService}`  ← check orchestration overlap
+- `{Repository}` -> `{OtherRepository}`  ← verify ownership and transaction scope
 ```
+
+Rules of thumb:
+- many horizontal edges in the UI layer usually mean the backing bean is doing orchestration work;
+- many horizontal edges in the service layer often signal missing domain boundaries;
+- repository-to-repository coupling requires special scrutiny because it often hides table ownership issues.
 
 ### 6 — Interface Change Impact Protocol
 
-When changing a port interface (e.g., adding a method to `{Entity}Repository`):
+When changing a port or shared service contract:
 
-```
-1. Find all implementations:
-   grep -rn "implements {InterfaceName}" src/ --include="*.java"
-
-2. Find all test mocks of this interface:
-   grep -rn "@Mock.*{InterfaceName}\|mock({InterfaceName}" src/test/ --include="*.java"
-
-3. Find all callers expecting the current signature:
-   grep -rn "\.{oldMethodName}(" src/ --include="*.java"
-
-4. Assess:
-   [ ] Breaking change? (removed/renamed method) → update all impls + tests
-   [ ] Additive change? (new method with default impl) → only new impl needed
-   [ ] Signature change? (different param types) → update all call sites
-
-5. Plan the migration order:
-   a. Add new method to interface (with default implementation if possible)
-   b. Update real implementation first
-   c. Update test mocks
-   d. Update callers
-   e. Remove deprecated signature
+```text
+1. Find all implementations
+2. Find all test mocks and stubs
+3. Find all current callers of the method/signature
+4. Mark the change as additive, breaking, or signature-shifting
+5. Update in this order:
+   a. implementation or adapter
+   b. tests and mocks
+   c. callers
+   d. deprecated path removal
 ```
 
 ---
 
 ## Rules
 
-- Always run grep-based analysis FIRST — it requires no tooling and covers 80% of cases.
-- Use tree-sitter script for modules with 50+ files where grep output is unmanageable.
-- Build the impact matrix before writing a single line of code for a cross-cutting change.
-- Never modify a class with fan-in > 5 without a complete test sweep of callers.
-- Document the flow diagram in the PR description for any change affecting 3+ layers.
+- Run grep-based analysis first; use AST analysis when the scope justifies it.
+- For JSF/Facelets systems, prefer XHTML-first tracing over blind DAO-first tracing.
+- Treat `unresolvedBeans` and `ambiguousDependencies` as blockers until verified manually.
+- Build the impact matrix before making a cross-layer change.
+- Do not infer business meaning from names alone when the code or schema says otherwise.
 
 ---
 
 ## Checklist
 
-```
-[ ] Impact matrix built (grep or tree-sitter) before starting changes
-[ ] All direct callers identified and reviewed
-[ ] All test mocks of changed class/interface updated
-[ ] Fan-in + fan-out assessed for changed classes
-[ ] Flow diagram drawn for any use case that crosses 3+ layers
-[ ] Legacy flow documented with table ownership before migration
-[ ] Transactional boundary confirmed (one @Transactional in service layer)
-[ ] ACL boundaries confirmed (no domain objects leaking into data layer)
-[ ] No circular dependencies introduced (A→B→C→A is forbidden)
+```text
+[ ] Impact matrix built before starting changes
+[ ] Direct callers or dependents identified and reviewed
+[ ] Fan-in and fan-out assessed for changed classes
+[ ] Vertical layer flow documented for the target use case
+[ ] Horizontal dependencies reviewed for coupling smells
+[ ] XHTML entrypoint analyzed when a JSF/Facelets view exists
+[ ] Ambiguous beans and dependencies resolved explicitly
+[ ] Transactional boundary confirmed
+[ ] ACL boundaries confirmed
+[ ] No circular dependencies introduced
 ```

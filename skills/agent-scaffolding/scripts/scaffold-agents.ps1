@@ -8,6 +8,7 @@ $agentsDir = Join-Path $workspaceRoot '.github\agents'
 
 $catalog = @(
     'team-lead',
+    'developer',
     'bootstrap-workspace',
     'orchestrator',
     'agent-architect',
@@ -56,11 +57,14 @@ if (Test-Path $agentsDir) {
         Where-Object { Select-String -Path $_.FullName -Pattern '^user-invocable:\s*true$' -Quiet })
 }
 
-$surfaceOk = ($publicAgents.Count -eq 1 -and $publicAgents[0].Name -eq 'team-lead.agent.md')
+$expectedPublicAgents = @('developer.agent.md', 'team-lead.agent.md')
+$actualPublicAgents = @($publicAgents | Select-Object -ExpandProperty Name | Sort-Object)
+$surfaceDiff = Compare-Object -ReferenceObject $expectedPublicAgents -DifferenceObject $actualPublicAgents
+$surfaceOk = ($actualPublicAgents.Count -eq $expectedPublicAgents.Count -and $surfaceDiff.Count -eq 0)
 if ($surfaceOk) {
-    Write-Host 'Public surface: team-lead only.' -ForegroundColor Green
+    Write-Host 'Public surface: team-lead + developer.' -ForegroundColor Green
 } else {
-    Write-Host 'Public surface issue: expected only team-lead.agent.md to be public.' -ForegroundColor Yellow
+    Write-Host 'Public surface issue: expected developer.agent.md and team-lead.agent.md to be public.' -ForegroundColor Yellow
     if ($publicAgents.Count -gt 0) {
         Write-Host ('  Public agents: ' + (($publicAgents | Select-Object -ExpandProperty Name) -join ', ')) -ForegroundColor Yellow
     }
@@ -78,6 +82,6 @@ if ($AuditOnly) {
 
 Write-Host "`nMissing agents require scaffolding from toolkit templates." -ForegroundColor Yellow
 Write-Host 'Incomplete agents: edit the file and add the missing frontmatter fields.' -ForegroundColor Yellow
-Write-Host 'If the public surface is wrong, restore team-lead as the only public agent.' -ForegroundColor Yellow
+Write-Host 'If the public surface is wrong, restore team-lead and developer as the only public agents.' -ForegroundColor Yellow
 
 exit ($missing.Count + $broken.Count + $(if ($surfaceOk) { 0 } else { 1 }))

@@ -1,0 +1,20 @@
+{
+  "name": "Local Dev",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "enabled": true
+    },
+    {
+      "key": "authToken",
+      "value": "SET_ME",
+      "enabled": true
+    },
+    {
+      "key": "transactionId",
+      "value": "tx-local",
+      "enabled": true
+    }
+  ]
+}

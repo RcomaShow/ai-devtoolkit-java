@@ -25,7 +25,7 @@ function Test-SensitiveNode {
     if ($Node -is [string]) {
         $sensitiveName = $Path -match '(?i)(token|password|secret|connection|user/pass|credential)'
         $isEnvReference = $Node -match '^\$\{env:[^}]+\}$'
-        $looksEmbeddedCredential = $Node -match '(?i)(://[^\s]+:[^\s]+@|^[^\s/]+/[^\s@]+@|jdbc:|@[A-Za-z0-9_.:-]+)'
+        $looksEmbeddedCredential = $Node -match '(?i)(://[^\s]+:[^\s]+@|^[^\s/]+/[^\s@]+@|jdbc:)'
         if (($sensitiveName -or $looksEmbeddedCredential) -and -not $isEnvReference) {
             $script:issues += [PSCustomObject]@{ Path = $Path; Value = $Node }
         }

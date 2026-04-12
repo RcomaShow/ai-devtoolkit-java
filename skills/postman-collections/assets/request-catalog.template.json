@@ -1,0 +1,33 @@
+{
+  "folders": [
+    {
+      "name": "Smoke",
+      "requests": [
+        {
+          "name": "GET readiness",
+          "method": "GET",
+          "path": "/q/health/ready",
+          "expectedStatus": 200,
+          "headers": {
+            "Accept": "application/json"
+          }
+        },
+        {
+          "name": "POST example",
+          "method": "POST",
+          "path": "/example",
+          "expectedStatus": 200,
+          "headers": {
+            "Authorization": "Bearer {{authToken}}",
+            "X-jarvis-transactionId": "{{transactionId}}",
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          "body": {
+            "example": true
+          }
+        }
+      ]
+    }
+  ]
+}

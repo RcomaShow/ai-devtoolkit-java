@@ -45,7 +45,10 @@ if (Test-Path $agentsDir) {
         Where-Object { Select-String -Path $_.FullName -Pattern '^user-invocable:\s*true$' -Quiet })
 }
 
-$surfaceOk = ($publicAgents.Count -eq 1 -and $publicAgents[0].Name -eq 'team-lead.agent.md')
+$expectedPublicAgents = @('developer.agent.md', 'team-lead.agent.md')
+$actualPublicAgents = @($publicAgents | Select-Object -ExpandProperty Name | Sort-Object)
+$surfaceDiff = Compare-Object -ReferenceObject $expectedPublicAgents -DifferenceObject $actualPublicAgents
+$surfaceOk = ($actualPublicAgents.Count -eq $expectedPublicAgents.Count -and $surfaceDiff.Count -eq 0)
 $surfaceColor = if ($surfaceOk) { 'Green' } else { 'Yellow' }
 $surfaceLabel = if ($surfaceOk) { 'OK' } else { 'REVIEW NEEDED' }
 Write-Host "Public surface: $surfaceLabel" -ForegroundColor $surfaceColor
@@ -63,6 +66,11 @@ foreach ($repoName in $targets) {
     $repoExists = Test-Path (Join-Path $workspaceRoot $repoName)
     $normalizedRepo = $repoName -replace '[-_]', '-'
     $matchingSkills = @()
+    $memoryRoot = Join-Path $workspaceRoot "$repoName\.github\memory"
+    $memoryFiles = @('context.md', 'dependencies.md', 'recent-changes.md') | Where-Object {
+        Test-Path (Join-Path $memoryRoot $_)
+    }
+    $memoryOk = ($memoryFiles.Count -eq 3)
 
     if (Test-Path $skillsDir) {
         $matchingSkills = @(Get-ChildItem $skillsDir -Directory |
@@ -71,15 +79,20 @@ foreach ($repoName in $targets) {
 
     $status = if (-not $repoExists) {
         'REPO_MISSING'
-    } elseif ($matchingSkills.Count -gt 0) {
+    } elseif ($matchingSkills.Count -gt 0 -and $memoryOk) {
         'OK'
-    } else {
+    } elseif ($matchingSkills.Count -gt 0) {
+        'MEMORY_MISSING'
+    } elseif ($memoryOk) {
         'CONTEXT_MISSING'
+    } else {
+        'CONTEXT_AND_MEMORY_MISSING'
     }
 
     $repoResults += [PSCustomObject]@{
         Repo         = $repoName
         ContextSkill = if ($matchingSkills.Count -gt 0) { ($matchingSkills | Select-Object -ExpandProperty Name) -join ', ' } else { 'NONE' }
+        MemoryFiles  = if ($memoryFiles.Count -gt 0) { $memoryFiles -join ', ' } else { 'NONE' }
         Status       = $status
     }
 }
@@ -114,17 +127,24 @@ Write-Host "Repo coverage:    $($repoResults.Count - $coverageIssues.Count)/$($r
 if (-not $surfaceOk) {
     Write-Host 'Public surface issues:' -ForegroundColor Yellow
     if ($publicAgents.Count -eq 0) {
-        Write-Host '  - team-lead.agent.md is missing or not public'
-    } elseif ($publicAgents.Count -gt 1) {
-        Write-Host '  - More than one public agent is exposed'
-    } elseif ($publicAgents[0].Name -ne 'team-lead.agent.md') {
-        Write-Host ("  - Unexpected public agent: " + $publicAgents[0].Name)
+        Write-Host '  - developer.agent.md and team-lead.agent.md are missing or not public'
+    } else {
+        Write-Host '  - Public surface must contain exactly developer.agent.md and team-lead.agent.md'
     }
 }
 
 if ($coverageIssues.Count -gt 0) {
     Write-Host 'Repo context issues:' -ForegroundColor Yellow
-    $coverageIssues | ForEach-Object { Write-Host "  - $($_.Repo): $($_.Status)" }
+    $coverageIssues | ForEach-Object {
+        $detail = $_.Status
+        if ($_.ContextSkill -eq 'NONE') {
+            $detail += ' | missing context skill'
+        }
+        if ($_.MemoryFiles -eq 'NONE' -or $_.MemoryFiles -notlike '*recent-changes.md*' -or $_.MemoryFiles -notlike '*dependencies.md*' -or $_.MemoryFiles -notlike '*context.md*') {
+            $detail += ' | missing repo memory'
+        }
+        Write-Host "  - $($_.Repo): $detail"
+    }
 }
 
 $exitCode = $coverageIssues.Count + $(if ($catalogOk) { 0 } else { 1 }) + $(if ($surfaceOk) { 0 } else { 1 })

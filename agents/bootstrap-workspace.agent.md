@@ -2,7 +2,7 @@
 name: 'Bootstrap Workspace'
 description: 'Bootstrap or repair the Copilot-first AI scaffolding of a multi-repo workspace. Use for .github runtime setup, workspace inventory generation, MCP validation, and bootstrap audits.'
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
 effort: high
 argument-hint: "Workspace bootstrap task — e.g. 'initialize adapters', 'repair workspace inventory', 'audit MCP security'"
 agents: [Explore, agent-architect]

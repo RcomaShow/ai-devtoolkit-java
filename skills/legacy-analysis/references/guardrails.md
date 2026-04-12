@@ -4,3 +4,5 @@
 - Track ambiguities explicitly instead of silently resolving them.
 - Separate proven behavior from migration assumptions.
 - Record tables, columns, and side effects before proposing replacement APIs.
+- When a JSF/XHTML page exists, start from the view and trace downward before proposing a migration slice.
+- Distinguish vertical layer flow from horizontal same-layer coupling; both matter for migration risk.

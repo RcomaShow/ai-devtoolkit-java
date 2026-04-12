@@ -135,6 +135,11 @@ async function scanTopLevelFolders() {
       localAgentAssets: assets,
     };
 
+    if (directory.name.startsWith('.')) {
+      utilityDirectories.push(record);
+      continue;
+    }
+
     if (await pathExists(path.join(directory.fullPath, '.git'))) {
       repositories.push(record);
     } else {

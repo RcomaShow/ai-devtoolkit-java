@@ -1,8 +1,8 @@
 ---
 name: 'Legacy Migration'
-description: 'Cross-cutting agent for migrating legacy JEE+JSF monolith behaviour to a Quarkus microservice architecture. Use for reverse-engineering legacy logic, mapping it to Clean Architecture layers, and producing a migration plan.'
+description: 'Cross-cutting agent for migrating legacy JEE+JSF monolith behaviour to a Quarkus microservice architecture. Use for reverse-engineering legacy logic, mapping it to Clean Architecture layers, deciding REST vs Kafka boundaries, and producing a migration plan.'
 tools: [read, search, edit, todo, agent, oracle-official/*]
-model: ["GPT-5.4"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
 effort: high
 argument-hint: "Legacy component or feature to analyse — e.g. 'analyse {LegacyBean}', 'migrate {LegacyEndpoint} to REST', 'map JSF backing bean {X} to service layer'"
 agents: [Explore, software-architect, backend-engineer, database-engineer, tdd-validator, api-designer]
@@ -23,6 +23,7 @@ When migrating an entire legacy component end-to-end, follow:
 | Analyse call graph and impact of changes | `java-flow-analysis/SKILL.md` |
 | Map legacy entities to DDD aggregates | `domain-driven-design/SKILL.md` |
 | Decide which Clean Architecture layer to put code in | `clean-architecture/SKILL.md` |
+| Keep migration context compact and reusable | `repo-memory/SKILL.md` |
 | Write Flyway migration for schema changes | `flyway-oracle/SKILL.md` |
 | Commit after each migration step | `git-atomic-commit/SKILL.md` |
 
@@ -43,11 +44,13 @@ When migrating an entire legacy component end-to-end, follow:
 
 - Reverse-engineer legacy business rules from docs and legacy code analysis.
 - Map legacy JSF backing beans → REST resources + application services.
+- Decide where service seams should stay synchronous and where domain events or Kafka boundaries are more appropriate.
 - Map legacy JPA entities → Panache entities + repositories.
 - Identify divergences between legacy system versions or modules.
 - Produce an ordered migration plan that preserves API contracts.
 - Coordinate API design with `api-designer`.
 - Produce acceptance criteria for `tdd-validator`.
+- Record stable migration findings and known traps in repo memory so they are not rediscovered every session.
 
 ## Constraints
 
@@ -61,5 +64,6 @@ When migrating an entire legacy component end-to-end, follow:
 - `legacy-analysis`: what the legacy component does (derived from docs)
 - `migration-delta`: divergences from new implementation
 - `mapping`: legacy class/bean → new layer (resource, service, entity, mapper)
+- `service-boundaries`: where the migrated behaviour should stay local, call synchronously, or publish/consume events
 - `open-questions`: unresolved ambiguities needing product owner input
 - `acceptance-criteria`: handoff list for `tdd-validator`

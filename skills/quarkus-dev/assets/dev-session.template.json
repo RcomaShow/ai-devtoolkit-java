@@ -1,0 +1,7 @@
+{
+  "serviceDir": ".\\service-a",
+  "port": 8080,
+  "healthPath": "/q/health/ready",
+  "timeoutSeconds": 90,
+  "extraArgs": "-Ddebug=false -Dquarkus.log.file.enable=true"
+}

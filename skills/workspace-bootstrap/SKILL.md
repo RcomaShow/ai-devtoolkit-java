@@ -40,7 +40,7 @@ npm run bootstrap:security:audit
 ## Checklist
 
 - [ ] `.github/agents`, `.github/skills`, and `.github/prompts` exist
-- [ ] `team-lead.agent.md` is the only public agent in `.github/agents/`
+- [ ] `team-lead.agent.md` and `developer.agent.md` are the only public agents in `.github/agents/`
 - [ ] `.ai/memory/workspace-map.json` is current
 - [ ] `.vscode/mcp.json` uses `${env:...}` references for secrets
 - [ ] `AI_BOOTSTRAP_IMPROVEMENTS.md` updated after review

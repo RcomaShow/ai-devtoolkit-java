@@ -1,144 +1,153 @@
 ---
 name: legacy-analysis
-description: 'Procedure for reverse-engineering legacy JEE+JSF monoliths before migrating to Quarkus microservices. Reference when analysing legacy components, mapping to Clean Architecture layers, and preparing migration plans.'
-argument-hint: "Legacy component to analyse — e.g. 'reverse-engineer {LegacyBean}', 'map {LegacyEntity} to domain model'"
+description: 'Procedure for reverse-engineering legacy JEE+JSF monoliths before migrating to Quarkus microservices. Includes XHTML-first tracing, layer mapping, and evidence-based business rule extraction.'
+argument-hint: "Legacy component to analyse — e.g. 'reverse-engineer {LegacyBean}', 'map {LegacyEntity} to domain model', 'trace {view}.xhtml to every layer'"
 user-invocable: false
 ---
 
 # Legacy Analysis — JEE/JSF Reverse-Engineering Procedure
 
+## Phase 0 — Identify the True Entrypoint
+
+Do not assume the flow starts from the database.
+
+Choose the real entrypoint first:
+- JSF/Facelets page: start from the `.xhtml`
+- SOAP/JAX-RS endpoint: start from the service contract
+- Batch or scheduler: start from the launcher or timer class
+- MDB/listener: start from the consumed event or queue
+
+For JSF/Facelets systems, the preferred workflow is now:
+
+```bash
+python .github/skills/java-flow-analysis/scripts/analyze-java.py legacy-xhtml <source-root> <view.xhtml>
+```
+
+This gives you the first-pass map from view bindings to backing bean, service/EJB, repository/DAO, and entity or external clients.
+
 ## Phase 1 — Inventory
 
-Before touching any code, produce an inventory:
+Produce an inventory before proposing any migration slice.
 
 ```markdown
 ## Legacy Component Inventory
 
-| Component | Type | Lines | Description |
-|-----------|------|-------|-------------|
-| {BeanName}Bean.java | JSF Backing Bean | ~400 | Handles {feature} UI logic |
-| {ServiceName}EJB.java | Stateless EJB | ~600 | Business logic for {feature} |
-| {EntityName}.java | JPA Entity | ~150 | Maps to T_{TABLE} |
-| {DaoName}Dao.java | DAO | ~200 | DB access for {feature} |
+| Component | Type | Lines | Layer Today | Description |
+|-----------|------|-------|-------------|-------------|
+| {View}.xhtml | JSF View | ~150 | view | Entry page for {feature} |
+| {BeanName}Bean.java | Backing Bean | ~400 | ui-orchestration | Handles actions and view state |
+| {ServiceName}EJB.java | Stateless EJB | ~600 | business/application | Business logic for {feature} |
+| {DaoName}Dao.java | DAO | ~200 | persistence | DB access for {feature} |
+| {EntityName}.java | JPA Entity | ~150 | persistence-model | Maps to T_{TABLE} |
 ```
 
-## Phase 2 — Classify Each Component
+## Phase 2 — Build the Vertical Flow
 
-Map legacy class types to Clean Architecture target layers:
+For XHTML-driven features, use both automated and manual steps.
 
-| Legacy Type | Maps to New Layer | Notes |
-|-------------|------------------|-------|
-| JSF Backing Bean | `api/` REST Resource | Extract business logic to service first |
-| Stateless EJB | `service/` Application Service | Keep only orchestration |
-| EJB with business rules | `domain/service/` Domain Service | Extract rules to domain |
-| JPA Entity (business model) | `domain/model/` Aggregate | Strip `@Entity`, add invariants |
-| JPA Entity (persistence) | `data/entity/` Panache Entity | Keep `@Entity`, add ACL |
-| DAO | `data/repository/` PanacheRepository | Implement domain port interface |
+```text
+Step 1 — Extract EL bindings from the view
+    Examples: #{bean.search}, #{bean.rows}, #{bean.selectedItem.code}
 
-## Phase 3 — Extract Business Rules
+Step 2 — Resolve the backing bean
+    Use analyze-java.py legacy-xhtml to map bean names to Java classes.
 
-For each EJB/Bean:
+Step 3 — Review direct Java dependencies
+    Run analyze-java.py deps on the resolved bean and downstream classes.
 
-1. **List all public methods** — these become domain service operations or REST endpoints
-2. **Identify invariants** — conditions that must always be true (move to domain model)
-3. **Identify validation** — input checks (move to `api/` Bean Validation)
-4. **Identify queries** — DB calls (move to repository port interface)
-5. **Identify external calls** — services called (become port interfaces or MCP clients)
-
+Step 4 — Confirm the full chain
+    XHTML -> Backing Bean -> EJB/Service -> DAO/Repository -> Entity/Table/External system
 ```
-Legacy method signature: void approveNomination(Long id, String userId)
+
+Record both:
+- vertical edges between layers;
+- horizontal edges inside the same layer, because they often expose accidental coupling.
+
+## Phase 3 — Classify Each Component
+
+Map legacy types to target layers:
+
+| Legacy Type | Typical Target | Notes |
+|-------------|----------------|-------|
+| JSF Backing Bean | `api/` REST resource or request facade | Extract orchestration first, then remove view state concerns |
+| Stateless EJB | `service/` application service | Keep transaction and orchestration only |
+| EJB with business rules | `domain/service/` | Extract invariants and decisions from framework code |
+| DAO | `data/repository/` | Replace raw SQL or legacy ORM access with a port + adapter |
+| JPA Entity used as business model | split into `domain/model/` + `data/entity/` | Preserve persistence mapping in data layer only |
+| Legacy mapper/translator | `data/acl/` or `api/mapper/` | Depends on source and target responsibility |
+
+## Phase 4 — Extract Business Rules
+
+For each bean, EJB, or service:
+
+1. List public methods and action methods invoked by the UI.
+2. Identify state transitions and invariants.
+3. Separate input validation from business decisions.
+4. Separate queries from commands.
+5. Capture external calls, emails, file operations, and side effects.
+
+```text
+Legacy method: void approveNomination(Long id, String userId)
 ↓
 REST endpoint:  POST /api/v1/nominations/{id}/approvazioni
 Service method: nominationService.approve(NominationId id, UserId approvedBy)
-Domain method:  nomination.approve(approvedBy)  ← enforces invariant: must be in BOZZA state
+Domain method:  nomination.approve(approvedBy)
+Invariant:      only BOZZA nominations can be approved
 ```
 
-## Phase 4 — Schema Analysis
+Every extracted rule must point to evidence:
+- Java method
+- XHTML action or rendered condition
+- SQL or schema evidence
+- external document or functional spec
 
-For each JPA entity:
+## Phase 5 — Schema and Side-Effect Analysis
 
-1. Query `oracle-official` MCP for the actual table structure
-2. Identify columns that map to domain concepts vs audit/technical columns
-3. Identify FK relationships — these become inter-aggregate references (by ID only)
-4. Identify legacy naming (abbreviated column names) — document in ACL translator
+For each entity or DAO touched by the flow:
+
+1. Query `oracle-official` MCP for the actual table structure.
+2. Mark business columns versus technical/audit columns.
+3. Identify FK relationships and ownership boundaries.
+4. Note stored procedures, triggers, and batch side effects.
+5. Document external calls made in the same use case.
 
 ```java
-// ACL Translator — maps legacy schema to clean domain model
 @ApplicationScoped
 public class {Entity}AclTranslator {
 
-    public {Entity} toDomain({Entity}Entity entity) {
-        return new {Entity}(
-            new {Entity}Id(entity.id),
-            new Code(entity.codValue),       // COD_VALUE → Code value object
-            new Period(entity.dtInizio, entity.dtFine),  // legacy columns → value object
-            {Status}.fromCode(entity.cdStatus)  // CD_STATO → enum
-        );
-    }
-
-    public {Entity}Entity toEntity({Entity} domain) {
-        var entity = new {Entity}Entity();
-        entity.id = domain.getId().value();
-        entity.codValue = domain.getCode().value();
-        entity.dtInizio = domain.getPeriod().from();
-        entity.dtFine = domain.getPeriod().to();
-        entity.cdStatus = domain.getStatus().code();
-        return entity;
-    }
+        public {Entity} toDomain({Entity}Entity entity) {
+                return new {Entity}(
+                        new {Entity}Id(entity.id),
+                        new Code(entity.codValue),
+                        new Period(entity.dtInizio, entity.dtFine),
+                        {Status}.fromCode(entity.cdStatus)
+                );
+        }
 }
 ```
 
-## Phase 5 — Migration Order
+## Phase 6 — Migration Mapping
 
-Recommended migration sequence (risk-ordered):
+Once the current flow is proven, define the target slice.
 
-1. **Domain model** — pure Java, no framework, easiest to test
-2. **Port interfaces** — define contracts before implementing
-3. **Data layer** — Panache entities + ACL translators
-4. **Domain services** — business logic, testable with Mockito
-5. **Application services** — orchestration + `@Transactional`
-6. **REST resources** — thin layer, delegates to services
-7. **API spec** — formalise with OpenAPI after implementation
+Recommended migration order:
+1. domain model and value objects
+2. port interfaces
+3. data adapters and ACL translators
+4. domain services
+5. application services with transaction boundaries
+6. REST resources or integration entrypoints
+7. OpenAPI contract and consumer alignment
 
-## Phase 6 — Divergence Analysis
-
-When the legacy system has multiple versions or modules:
-
-```markdown
-## Divergence Report: {FeatureA} vs {FeatureB}
-
-| Behaviour | Version A | Version B | Decision |
-|-----------|-----------|-----------|----------|
-| {rule} | enforces X | enforces Y | Use X — confirmed with product owner |
-| {rule} | not present | enforces Z | Include Z — is a valid invariant |
-| {rule} | both same | both same | Trivial — migrate as-is |
-```
+If multiple legacy versions disagree, write a divergence report before coding.
 
 ## Output Template
 
-```markdown
-## Legacy Analysis — {ComponentName}
-
-### Inventory
-<list of legacy classes involved>
-
-### Business Rules Extracted
-1. <rule 1>
-2. <rule 2>
-
-### Migration Mapping
-| Legacy | New Location |
-|--------|-------------|
-| {BeanMethod} | {NewClass}.{method} |
-
-### Schema Notes
-- T_{TABLE} column {COL}: maps to {DomainConcept}
-- FK T_{TABLE}.{FK_COL} → T_{REF}: aggregate reference by ID
-
-### Open Questions
-- [ ] <question requiring product owner input>
-
-### Acceptance Criteria (for tdd-validator)
-- [ ] <AC 1 in "should_<outcome>_when_<condition>" format>
-- [ ] <AC 2>
-```
+Use the asset template beside this skill and include at least:
+- entrypoint file
+- resolved beans and unresolved beans
+- vertical layer trace
+- horizontal dependency hotspots
+- business rules with evidence
+- schema touchpoints and side effects
+- migration mapping and open questions

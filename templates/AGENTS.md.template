@@ -2,7 +2,7 @@
 
 ## Scope
 - Treat this workspace root as a multi-repo shell, not as a single Git repository.
-- Detect repository folders before writing repo-local context skills or instructions.
+- Detect repository folders before writing repo-local context skills, repo memory, or instructions.
 - Use [.ai/memory/workspace-map.json](.ai/memory/workspace-map.json) as the live workspace inventory.
 
 ## Source Of Truth
@@ -10,6 +10,7 @@
 - `.github/skills/` — canonical runtime skills and repo-context skills
 - `.github/prompts/` — canonical prompt entry points
 - `.ai/memory/` — machine-generated bootstrap inventory
+- `<repo>/.github/memory/` — compact repo-local memory for stable facts, dependencies, and recent deltas
 
 `.ai/` exists only for bootstrap operational memory. All authored runtime assets live in `.github/`.
 
@@ -21,8 +22,9 @@
 - Repositories: {repos}
 
 ## Public Copilot Surface
-- `@team-lead` is the only public agent.
-- Repository knowledge belongs in `.github/skills/{name}-{repo}/`, not in extra public agents.
+- `@team-lead` handles premium orchestration and deep multi-step work.
+- `@developer` handles bounded direct execution on smaller paid models.
+- Repository knowledge belongs in `.github/skills/{name}-{repo}/` for durable rules and `<repo>/.github/memory/` for compact live context, not in extra public agents.
 
 ## Bootstrap Contract
 1. Detect top-level repositories.
@@ -48,4 +50,5 @@
 ## Safety
 - Never assume every repository should inherit workspace-level instructions automatically.
 - Do not overwrite existing repo-local AGENTS.md or `.github` assets unless explicitly requested.
+- Do not duplicate the workspace runtime inside repo-local `.github/`; repo-local `.github/memory/` is the approved memory surface unless the repo already owns more.
 - After each bootstrap implementation or bootstrap review, update `AI_BOOTSTRAP_IMPROVEMENTS.md`.

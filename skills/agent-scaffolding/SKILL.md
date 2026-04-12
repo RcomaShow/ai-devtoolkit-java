@@ -1,6 +1,6 @@
 ---
 name: agent-scaffolding
-description: 'Agent catalog audit and scaffolding for Copilot-first Java/Quarkus workspaces. Validates frontmatter, public-surface rules, companion skills, and repo-context coverage.'
+description: 'Agent catalog audit and scaffolding for Copilot-first Java/Quarkus workspaces. Validates frontmatter, public-surface rules, companion skills, repo-memory coverage, and context discipline.'
 argument-hint: "Audit or scaffold action — e.g. 'audit agents', 'add internal specialist', 'create repo context skill'"
 user-invocable: false
 ---
@@ -12,7 +12,8 @@ user-invocable: false
 ### Public Surface
 | Agent | Effort | Role |
 |-------|--------|------|
-| `team-lead` | high | Single public entry point for intake, routing, review, and fix loops |
+| `team-lead` | high | Premium orchestration for intake, routing, review, and fix loops |
+| `developer` | medium | Smaller-model direct execution for bounded tasks without sub-agents |
 
 ### Internal Specialists
 | Agent | Effort | Role |
@@ -38,7 +39,7 @@ Every `.agent.md` file must have:
 name: <kebab-case matching filename>
 description: "<one-line purpose>"
 tools: [<tool list>]
-model: ["GPT-5.4"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
 effort: high | medium | low
 argument-hint: "<usage hint>"
 agents: [Explore, ...]
@@ -46,19 +47,32 @@ user-invocable: true | false
 ---
 ```
 
-## Public Agent Template
+## Public Agent Templates
 
-Use this only when editing `team-lead` or intentionally redefining the public surface.
+Use these only when editing `team-lead`, `developer`, or intentionally redefining the public surface.
 
 ```markdown
 ---
 name: team-lead
-description: "Single public entry point for the Copilot-first runtime."
+description: "Premium orchestration entry point for the Copilot-first runtime."
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
 effort: high
 argument-hint: "Describe the outcome you need"
 agents: [Explore, software-architect, backend-engineer, code-reviewer]
+user-invocable: true
+---
+```
+
+```markdown
+---
+name: developer
+description: "Bounded direct execution path for smaller paid models."
+tools: [read, search, edit, execute, todo]
+model: ["GPT-5.4 Mini", "Claude Haiku 4.5"]
+effort: medium
+argument-hint: "Describe the focused task you need"
+agents: []
 user-invocable: true
 ---
 ```
@@ -70,7 +84,7 @@ user-invocable: true
 name: {agent-name}
 description: "{one-line internal role}"
 tools: [read, search, edit, todo, agent]
-model: ["GPT-5.4"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
 effort: medium
 argument-hint: "{short usage hint}"
 agents: [Explore]
@@ -80,7 +94,7 @@ user-invocable: false
 
 ## Repo-Context Skill Template
 
-Repository knowledge belongs in a companion skill, not in a public agent.
+Repository knowledge belongs in a companion skill plus repo-local memory, not in a public agent.
 
 ```markdown
 ---
@@ -102,8 +116,8 @@ user-invocable: false
 - [ ] All baseline agents have `.agent.md` files in `.github/agents/`
 - [ ] All `.agent.md` files have required frontmatter fields
 - [ ] `name` matches the filename without `.agent.md`
-- [ ] `model` is set to `["GPT-5.4"]`
-- [ ] `team-lead` is the only public agent
+- [ ] `model` uses the approved premium or mini model families
+- [ ] `team-lead` and `developer` are the only public agents
 - [ ] Internal specialists use `user-invocable: false`
 - [ ] `team-lead` references the internal specialists it should delegate to
 
@@ -111,4 +125,6 @@ user-invocable: false
 
 - [ ] Each repository has a context skill in `.github/skills/<workspace>-<repo>/SKILL.md`
 - [ ] Each context skill has `name`, `description`, `argument-hint`, and `user-invocable: false`
+- [ ] Each repository has `.github/memory/context.md`, `.github/memory/dependencies.md`, and `.github/memory/recent-changes.md`
 - [ ] Repo knowledge is not duplicated into public agent definitions
+- [ ] Generic shared rules stay in shared skills, not in repo memory
