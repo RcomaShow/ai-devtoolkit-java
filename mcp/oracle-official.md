@@ -43,7 +43,7 @@ Add `oracle-official/*` to `tools:` in these agent types:
 - `database-engineer` — always
 - `software-architect` — for schema verification before architecture decisions
 - `legacy-migration` — for legacy schema comparison
-- Team lead agents (Tier 3) that own repositories with DB changes
+- `team-lead` when coordinating DB-affecting work across repositories
 
 ## Security Rules
 

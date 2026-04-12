@@ -2,16 +2,16 @@
 
 ## Scope
 - Treat this workspace root as a multi-repo shell, not as a single Git repository.
-- Detect repository folders before writing repo-local agent files.
+- Detect repository folders before writing repo-local context skills or instructions.
 - Use [.ai/memory/workspace-map.json](.ai/memory/workspace-map.json) as the live workspace inventory.
 
 ## Source Of Truth
-- `.github/agents/` — canonical agent definitions (Copilot workspace agents)
-- `.github/skills/` — canonical skills
+- `.github/agents/` — canonical runtime agents
+- `.github/skills/` — canonical runtime skills and repo-context skills
 - `.github/prompts/` — canonical prompt entry points
-- `.ai/memory/` — machine-generated bootstrap inventory (workspace-map.json, mcp-registry.json)
+- `.ai/memory/` — machine-generated bootstrap inventory
 
-`.ai/` exists only for bootstrap operational memory. All authored assets live in `.github/`.
+`.ai/` exists only for bootstrap operational memory. All authored runtime assets live in `.github/`.
 
 ## Domain
 - Name: {name}
@@ -20,32 +20,25 @@
 - Java package: {package}
 - Repositories: {repos}
 
-## Workspace Rules
-- Use this root `AGENTS.md` as the only workspace-wide instruction file for Copilot in VS Code.
-- Do not duplicate the same workspace instructions into `.github/copilot-instructions.md`.
-- Agents are authored directly in `.github/agents/`. Other adapters copy from there — never the reverse.
-- Preserve existing repo-local agent files and treat them as authoritative for their own repository.
-- After each bootstrap implementation or bootstrap review, update `AI_BOOTSTRAP_IMPROVEMENTS.md`.
+## Public Copilot Surface
+- `@team-lead` is the only public agent.
+- Repository knowledge belongs in `.github/skills/{name}-{repo}/`, not in extra public agents.
 
-## Detection Contract
-1. Scan the workspace root for `.claude/`, `.cursor/`, `.github/`, `.gemini/`.
-2. Detect active processes: `cursor`, `claude`, `code`, `node`.
-3. Classify the runtime as `IDE`, `TERMINAL`, or `HYBRID`.
-4. Classify top-level folders as Git repositories or utility folders.
-5. Emit this JSON payload before making bootstrap decisions:
+## Bootstrap Contract
+1. Detect top-level repositories.
+2. Classify the runtime as `IDE` or `TERMINAL`.
+3. Emit this JSON payload before bootstrap decisions:
 
 ```json
 {
-  "mode": "IDE | TERMINAL | HYBRID",
-  "primary_tool": "cursor | claude | copilot | gemini | codex",
+  "mode": "IDE | TERMINAL",
+  "primary_tool": "copilot",
   "secondary_tools": []
 }
 ```
 
-## Adapter Policy
-- Copilot: keep `AGENTS.md` at root, expose custom assets through `.github/agents/`, `.github/prompts/`, `.github/skills/`.
-- Claude: use `CLAUDE.md` as an alias to `AGENTS.md`; keep `.claude/agents/` as baseline adapter.
-- Gemini: keep `.gemini/antigravity/agents/` as baseline adapter.
+4. Ensure `.github/agents/`, `.github/skills/`, and `.github/prompts/` exist.
+5. Refresh `.ai/memory/workspace-map.json` and `.ai/memory/mcp-registry.json`.
 
 ## MCP Policy
 - Read [.vscode/mcp.json](.vscode/mcp.json) before proposing new MCP servers.
@@ -53,5 +46,6 @@
 - Do not add new MCP servers unless built-in capabilities are insufficient.
 
 ## Safety
-- Never assume every repository should inherit workspace-level adapters automatically.
-- Do not overwrite existing repo-local CLAUDE.md, AGENTS.md, or .github assets unless explicitly requested.
+- Never assume every repository should inherit workspace-level instructions automatically.
+- Do not overwrite existing repo-local AGENTS.md or `.github` assets unless explicitly requested.
+- After each bootstrap implementation or bootstrap review, update `AI_BOOTSTRAP_IMPROVEMENTS.md`.

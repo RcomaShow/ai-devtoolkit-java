@@ -57,7 +57,7 @@ Use `sonarqube` MCP when:
 Add `sonarqube/*` to `tools:` in:
 - `tdd-validator` — for coverage gate validation
 - `code-reviewer` — for smell baseline comparison
-- Domain orchestrators — for project health overview
+- `team-lead` — for project health overview and quality-gate triage
 
 ## Security Rules
 

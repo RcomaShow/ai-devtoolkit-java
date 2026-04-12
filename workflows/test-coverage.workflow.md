@@ -1,175 +1,65 @@
 ---
 name: test-coverage
-description: "Flow for achieving 100% branch coverage on an existing class: enumerate paths → build test data → write tests → verify → atomic commit"
-triggers: ["test", "coverage", "branch coverage", "junit", "mockito", "copertura", "100%", "write tests", "scrivi test", "test class"]
-agents: [test-coverage-engineer, code-reviewer]
-skills: [java-test-coverage, git-atomic-commit]
-estimated-steps: 4
+description: "Internal workflow for test and coverage work through branch analysis -> plan -> test implementation -> review -> fix -> finalize. Invoked by team-lead."
+triggers: ["test", "coverage", "branch coverage", "junit", "mockito", "copertura", "100%", "write tests", "scrivi test"]
+agents: [test-coverage-engineer, tdd-validator, code-reviewer]
+skills: [java-test-coverage, tdd-workflow, git-atomic-commit]
+estimated-steps: 5
 ---
 
 # Workflow: Test Coverage
 
 ## Purpose
 
-Use when writing a test class to achieve 100% branch coverage on an existing production class. Follows a systematic path-enumeration-first approach — no test is written until every branch is mapped.
-
-**Do NOT use this workflow when:** the production class does not yet exist — use `feature-implementation` workflow instead, which includes test writing as Step 5.
-
----
-
-## Flow Overview
-
-```
-[Target Class Path]
-      │
-      ▼
-[Step 1: test-coverage-engineer] ─── run analyze-java.py, enumerate all branches
-      │
-      ▼
-[Step 2: test-coverage-engineer] ─── write test builders + skeleton + test methods
-      │
-      ▼
-[Step 3: test-coverage-engineer] ─── verify all branches covered, run tests
-      │                              COMMIT: test({scope}): add branch coverage for {ClassName}
-      ▼
-[Step 4: code-reviewer] ─── quality check: no tautologies, no brittle mocks
-      │
-      ▼
-[Done]
-```
-
----
+Use this workflow when the main outcome is better test protection or branch coverage on existing code.
 
 ## Steps
 
-### Step 1 — Enumerate All Branches
+### Step 1 — Analyze the target
 
-**Agent:** `test-coverage-engineer`
-**Skill to load first:** `skills/java-test-coverage/SKILL.md` (Phase 1 — Path Enumeration)
+**Lead specialist:** `test-coverage-engineer`
+**Load first:** `skills/java-test-coverage/SKILL.md`
 
-**Actions:**
-1. Run the AST analysis script to get branch count:
-   ```bash
-   python scripts/analyze-java.py branches path/to/TargetClass.java
-   python scripts/analyze-java.py test-matrix path/to/TargetClass.java
-   ```
-2. Build a Path Matrix table for every method:
+Produce:
+- target classes and methods
+- branch matrix or scenario map
+- required builders, mocks, and fixtures
 
-| Method | Branch | Condition | Expected |
-|--------|--------|-----------|---------|
-| `create()` | 1 — HAPPY | entity saved successfully | returns `EntityDto` |
-| `create()` | 2 — CONFLICT | `existsByCode` returns true | throws `ConflictException` |
-| `findById()` | 1 — FOUND | repository returns entity | returns `Optional<Dto>` filled |
-| `findById()` | 2 — NOT_FOUND | repository returns empty | returns `Optional.empty()` |
+### Step 2 — Plan the test set
 
-3. Count branches per method: `min_tests_needed` = number of branches + 1 for each multi-case switch
-4. Identify which Mockito pattern each branch requires (stubbing, captor, inOrder, Answer)
+**Lead specialist:** `test-coverage-engineer`
+**Support:** `tdd-validator`
 
-**Output expected:**
-- `path-matrix`: completed table of all branches
-- `mockito-patterns`: list of advanced patterns needed
-- `test-class-skeleton`: class header + constants + @ExtendWith
+Define:
+- minimal test cases needed
+- order of implementation
+- gaps that need refactoring rather than more tests
 
-**Escalate when:** the class has > 20 branches — consider splitting the test class by inner concern group.
+### Step 3 — Implement or update tests
 
----
+**Lead specialist:** `tdd-validator`
+**Load first:** `skills/tdd-workflow/SKILL.md`
 
-### Step 2 — Write Test Class
+Write or revise tests so they are explicit, non-brittle, and aligned to the branch plan.
 
-**Agent:** `test-coverage-engineer`
-**Skill to load first:** `skills/java-test-coverage/SKILL.md` (Phases 2-6)
-**Takes from Step 1:** `path-matrix`, `mockito-patterns`, `test-class-skeleton`
+### Step 4 — Review test quality
 
-**Actions — in order:**
+**Lead specialist:** `code-reviewer`
 
-**A. Test Data Builders** (if multiple test scenarios share similar objects):
-```java
-static NominaBuilder nomina() {
-    return new NominaBuilder().defaults();
-}
-```
+Check:
+- tautology-free assertions
+- realistic mock usage
+- branch plan coverage
+- maintainability of the test code
 
-**B. Test skeleton:**
-```java
-@ExtendWith(MockitoExtension.class)
-class {ClassName}Test {
-    @Mock {Dependency} dep;
-    @InjectMocks {ClassName} sut;
-    // constants for test data
-}
-```
+### Step 5 — Fix and finalize
 
-**C. For each row in the path matrix, write one `@Test` method:**
-- Name: `should_{expected}_when_{condition}()`
-- Arrange: stub only what the branch under test actually calls
-- Act: call the SUT method
-- Assert: verify the expected outcome AND any side effects (captures, interactions)
-
-**D. Apply advanced Mockito when needed:**
-- `@Captor` as method parameter (not field) for ArgumentCaptor
-- `inOrder.verify()` for sequence-sensitive interactions
-- `thenReturn(v1).thenReturn(v2)` for consecutive call scenarios
-- `Answer<T>` for dynamic return based on argument
-
-**Output expected:**
-- `test-class`: complete Java test class with all branches covered
-
----
-
-### Step 3 — Verify and Commit
-
-**Agent:** `test-coverage-engineer`
-**Skill to load first:** `skills/git-atomic-commit/SKILL.md`
-
-**Actions:**
-1. Run: `./mvnw test -pl <module> -Dtest={ClassName}Test`
-2. Run: `./mvnw test-compile` — verify no MapStruct or import errors
-3. Verify path matrix is fully covered — every row has a corresponding `@Test`
-4. Check: no `assertTrue(true)`, no `assertNotNull(dto)` without following field assertions
-5. Stage and commit:
-
-```bash
-git add src/test/java/com/company/domain/.../TargetClassTest.java
-git commit -m "test({scope}): add branch coverage for {ClassName}
-
-Covers all branches: {list key scenarios}.
-"
-```
-
----
-
-### Step 4 — Test Quality Review
-
-**Agent:** `code-reviewer`
-**Input:** the test class from Step 2
-
-**Checklist:**
-- [ ] Every `@Test` method name follows `should_{expected}_when_{condition}()` pattern
-- [ ] No tautology assertions (`assertTrue(true)`, `assertNotNull(result)` without further checks)
-- [ ] Mocks are strict (MockitoExtension default) — no unnecessary stubs
-- [ ] `ArgumentCaptor.getValue()` called after `verify()`, not before
-- [ ] `inOrder.verify()` used when method call order matters
-- [ ] `@Disabled` tests have a linked ticket number in the reason string
-- [ ] Test data builders used instead of repeating `new Entity(...)` inline
-
----
+**Owner:** `team-lead`
+**Loop rule:** if the branch plan is incomplete, return to Step 1; if test quality is weak, return to Step 3.
 
 ## Exit Criteria
 
-- [ ] Path matrix complete — every branch has a test method
-- [ ] `./mvnw test` exits 0
-- [ ] No tautology assertions in the test class
-- [ ] Atomic commit created with conventional message
-- [ ] Code review passed
-
----
-
-## Error Paths
-
-| Failure | Recovery |
-|---------|---------|
-| `UnnecessaryStubbingException` | Remove stub that is not called in this test method |
-| `NullPointerException` in test | Check that `@InjectMocks` constructor receives all mocked dependencies |
-| `VerificationInOrderFailure` | Reorder `inOrder.verify()` calls to match actual invocation order |
-| Branch not reachable in isolation | The class may need refactoring — flag to `code-reviewer` before writing the test |
-| Compilation error — MapStruct impl not found | Run `./mvnw compile` first to trigger annotation processing |
+- branch or scenario plan exists
+- implemented tests match that plan
+- coverage work does not hide production defects behind brittle mocks
+- final summary states what behavior is now protected

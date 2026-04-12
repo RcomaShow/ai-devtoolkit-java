@@ -1,0 +1,10 @@
+{
+  "hooks": [
+    {
+      "event": "pre-commit",
+      "description": "Run impact analysis on staged Java files with high fan-in (>5 callers) on Windows",
+      "run": "powershell -NoProfile -NonInteractive -File .ai-devtoolkit/adapters/github-copilot/hooks/flow-analysis/scripts/flow-analysis-check.ps1",
+      "failOnError": false
+    }
+  ]
+}

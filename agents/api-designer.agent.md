@@ -2,11 +2,11 @@
 name: 'API Designer'
 description: 'Cross-cutting API design and review agent. Use to design OpenAPI specs, review REST endpoint contracts, validate DTOs, and ensure API consistency across microservices.'
 tools: [read, search, edit, todo, agent]
-model: claude-sonnet-4-6
+model: ["GPT-5.4"]
 effort: medium
 argument-hint: "API feature or review target — e.g. 'design endpoint for {feature}', 'review openapi-{service}.yaml', 'align DTO with legacy contract'"
 agents: [Explore, legacy-migration]
-user-invocable: true
+user-invocable: false
 ---
 You design and review **REST APIs and OpenAPI specifications** for microservices.
 

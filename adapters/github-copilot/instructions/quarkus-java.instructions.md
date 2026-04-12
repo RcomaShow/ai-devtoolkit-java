@@ -1,5 +1,5 @@
 ---
-description: 'Quarkus 3.x + Java 21 coding standards. Applied to all Java source files (excluding tests). Enforces Clean Architecture layer rules, CDI patterns, and RESTEasy Reactive conventions.'
+description: 'Quarkus 3.x + Java 17/21 coding standards. Applied to all Java source files (excluding tests). Enforces Clean Architecture layer rules, CDI patterns, and RESTEasy Reactive conventions.'
 applyTo: 'src/main/java/**/*.java'
 ---
 

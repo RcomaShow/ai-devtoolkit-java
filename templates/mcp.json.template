@@ -1,12 +1,14 @@
 {
-  "servers": {
+  "mcpServers": {
     "oracle-official": {
       "command": "sql",
       "args": [
-        "${env:DB_USER}/${env:DB_PASS}@${env:DB_HOST}:${env:DB_PORT}/${env:DB_SID}",
         "-mcp"
       ],
-      "comment": "Oracle SQLcl MCP — schema introspection. Requires SQLcl in PATH. See .ai-devtoolkit/mcp/oracle-official.md"
+      "env": {
+        "MCP_DB_CONNECTION": "${env:MCP_DB_CONNECTION}"
+      },
+      "comment": "Oracle SQLcl MCP — schema introspection. Requires SQLcl in PATH and MCP_DB_CONNECTION env var. See .ai-devtoolkit/mcp/oracle-official.md"
     },
     "bitbucket-corporate": {
       "command": "npx",

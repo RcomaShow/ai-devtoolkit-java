@@ -2,11 +2,11 @@
 name: 'TDD Validator'
 description: 'Cross-cutting TDD agent. Use to write, validate, or audit tests for any domain service in the workspace. Implements test-first workflows: derives acceptance criteria, writes failing tests, then implements to green. Invokable directly or as a sub-agent.'
 tools: [read, search, edit, execute, todo, agent]
-model: claude-sonnet-4-6
+model: ["GPT-5.4"]
 effort: high
 argument-hint: "Feature, acceptance criteria list, or failing test — e.g. 'write tests for {feature}', 'audit test coverage for {module}'"
 agents: [Explore]
-user-invocable: true
+user-invocable: false
 ---
 You implement **test-driven development** across all services in this workspace.
 

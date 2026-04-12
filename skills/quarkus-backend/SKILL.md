@@ -1,13 +1,13 @@
 ---
 name: quarkus-backend
-description: 'Routing hub for all Quarkus 3.x + Java 21 implementation patterns. Read this first, then load the specific sub-skill for your task.'
+description: 'Routing hub for Quarkus 3.x backend implementation patterns for Java 17/21 workspaces. Read this first, then load the local reference doc that matches your task.'
 argument-hint: "What you're building — e.g. 'REST resource', 'Panache repository', 'async Mutiny', 'CDI event'"
 user-invocable: false
 ---
 
 # Quarkus Backend — Skill Router
 
-> **Read this file first.** Find your task in the routing table below, then read only the sub-skill you need. Do not load all sub-skills at once.
+> **Read this file first.** Find your task in the routing table below, then load only the local reference doc you need. Scripts, templates, and guardrails for this skill live in the same skill folder.
 
 ---
 
@@ -16,7 +16,7 @@ user-invocable: false
 | Component | Technology |
 |-----------|------------|
 | Runtime | Quarkus 3.x |
-| Language | Java 21 (records, pattern matching, sealed types) |
+| Language | Java 17 or 21 (select the version profile in `java-best-practices`) |
 | REST | RESTEasy Reactive + SmallRye OpenAPI |
 | Persistence | Hibernate ORM with Panache (Repository pattern — NOT Active Record) |
 | Mapping | MapStruct 1.6 |
@@ -27,25 +27,34 @@ user-invocable: false
 
 ---
 
+## Skill Assets
+
+- `references/api.md`
+- `references/service.md`
+- `references/persistence.md`
+- `references/async.md`
+- `references/guardrails.md`
+- `assets/service-stack.template.md`
+
 ## Routing Table
 
-| Task | Sub-Skill |
+| Task | Reference |
 |------|-----------|
-| Writing a REST endpoint (`@GET`, `@POST`, `@PUT`, `@DELETE`) | `skills/quarkus-backend/api/SKILL.md` |
-| Request/response DTOs, Bean Validation, `@Valid` | `skills/quarkus-backend/api/SKILL.md` |
-| RFC 7807 error handler, `ExceptionMapper` | `skills/quarkus-backend/api/SKILL.md` |
-| `@ConfigMapping` groups, config interface | `skills/quarkus-backend/api/SKILL.md` |
-| Writing an Application Service, `@Transactional` | `skills/quarkus-backend/service/SKILL.md` |
-| MapStruct mapper, DTO ↔ Domain conversion | `skills/quarkus-backend/service/SKILL.md` |
-| Package structure, naming conventions | `skills/quarkus-backend/service/SKILL.md` |
-| Writing a Panache Entity (`@Entity`, `@Table`) | `skills/quarkus-backend/persistence/SKILL.md` |
-| Writing a Panache Repository implementation | `skills/quarkus-backend/persistence/SKILL.md` |
-| ACL Translator (domain ↔ entity) | `skills/quarkus-backend/persistence/SKILL.md` |
-| Pagination (`Page`, `PagedResponse`) | `skills/quarkus-backend/persistence/SKILL.md` |
-| Multi-datasource (Oracle + MSSQL) | `skills/quarkus-backend/persistence/SKILL.md` |
-| Async/reactive with Mutiny `Uni`/`Multi` | `skills/quarkus-backend/async/SKILL.md` |
-| CDI domain events (`@Observes`, `Event<T>`) | `skills/quarkus-backend/async/SKILL.md` |
-| SSE streaming (`@Produces(SERVER_SENT_EVENTS)`) | `skills/quarkus-backend/async/SKILL.md` |
+| Writing a REST endpoint (`@GET`, `@POST`, `@PUT`, `@DELETE`) | `skills/quarkus-backend/references/api.md` |
+| Request/response DTOs, Bean Validation, `@Valid` | `skills/quarkus-backend/references/api.md` |
+| RFC 7807 error handler, `ExceptionMapper` | `skills/quarkus-backend/references/api.md` |
+| `@ConfigMapping` groups, config interface | `skills/quarkus-backend/references/api.md` |
+| Writing an Application Service, `@Transactional` | `skills/quarkus-backend/references/service.md` |
+| MapStruct mapper, DTO ↔ Domain conversion | `skills/quarkus-backend/references/service.md` |
+| Package structure, naming conventions | `skills/quarkus-backend/references/service.md` |
+| Writing a Panache Entity (`@Entity`, `@Table`) | `skills/quarkus-backend/references/persistence.md` |
+| Writing a Panache Repository implementation | `skills/quarkus-backend/references/persistence.md` |
+| ACL Translator (domain ↔ entity) | `skills/quarkus-backend/references/persistence.md` |
+| Pagination (`Page`, `PagedResponse`) | `skills/quarkus-backend/references/persistence.md` |
+| Multi-datasource (Oracle + MSSQL) | `skills/quarkus-backend/references/persistence.md` |
+| Async/reactive with Mutiny `Uni`/`Multi` | `skills/quarkus-backend/references/async.md` |
+| CDI domain events (`@Observes`, `Event<T>`) | `skills/quarkus-backend/references/async.md` |
+| SSE streaming (`@Produces(SERVER_SENT_EVENTS)`) | `skills/quarkus-backend/references/async.md` |
 
 ---
 

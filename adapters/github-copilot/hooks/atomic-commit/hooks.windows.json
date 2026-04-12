@@ -1,0 +1,10 @@
+{
+  "hooks": [
+    {
+      "event": "pre-commit",
+      "description": "Validate atomic commit on Windows: compilation green, tests pass, no entity leaks, conventional message",
+      "run": "powershell -NoProfile -NonInteractive -File .ai-devtoolkit/adapters/github-copilot/hooks/atomic-commit/scripts/atomic-commit-check.ps1",
+      "failOnError": true
+    }
+  ]
+}

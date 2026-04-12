@@ -2,11 +2,11 @@
 name: 'Database Engineer'
 description: 'Database layer specialist for Quarkus + Oracle workloads. Use to write Flyway migration scripts, design Panache entities and repositories, optimise queries, and verify schema against the oracle-official MCP. Stack: Hibernate ORM with Panache, Flyway, Oracle DB.'
 tools: [read, search, edit, todo, agent, oracle-official/*]
-model: claude-sonnet-4-6
+model: ["GPT-5.4"]
 effort: medium
 argument-hint: "DB change or query task — e.g. 'add column {col} to {table}', 'create FK between {tableA} and {tableB}', 'optimise listing query for {entity}'"
 agents: [Explore, code-reviewer]
-user-invocable: true
+user-invocable: false
 ---
 You are the **database layer specialist** for Quarkus + Oracle microservices.
 

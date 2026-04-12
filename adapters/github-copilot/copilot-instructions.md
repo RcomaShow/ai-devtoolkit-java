@@ -1,39 +1,33 @@
 ---
-description: 'Java 21 + Quarkus 3.x microservices workspace. Agents and skills in .ai-devtoolkit/ are the source of truth. Always load the relevant skill before implementing.'
+description: 'Copilot-first Java 17/21 + Quarkus 3.x workspace. Runtime agent and skill discovery happens from .github/, while .ai-devtoolkit/ remains the reusable source catalog. Use the single public team-lead agent and let it route internally.'
 applyTo: '**'
 ---
 
 # GitHub Copilot Workspace Instructions
 
-## Agent Catalog
+## Public Agent Contract
 
-Invoke agents from `.ai-devtoolkit/agents/` using `@<agent-name>`:
+Invoke only `@team-lead` from the workspace runtime catalog in `.github/agents/`.
+The reusable toolkit lives in `.ai-devtoolkit/`, but the active source of truth for Copilot is the generated workspace catalog. `team-lead` is responsible for selecting workflows, loading skills, delegating to hidden specialists, running review/fix loops, and returning the final outcome.
 
-| Agent | When to invoke |
-|-------|---------------|
-| `@orchestrator` | Default entry point — describe your task in any language, auto-routes |
-| `@backend-engineer` | Quarkus REST resources, services, repositories, mappers |
-| `@software-architect` | ADRs, layer design, bounded context decisions |
-| `@legacy-migration` | Reverse-engineer and migrate JEE/JSF to Quarkus |
-| `@tdd-validator` | Write tests from acceptance criteria (TDD cycle) |
-| `@test-coverage-engineer` | Achieve 100% branch coverage on existing classes |
-| `@code-reviewer` | SOLID, layer boundary, OWASP, Quarkus best practices review |
-| `@database-engineer` | Flyway migrations, Panache entities, Oracle queries |
-| `@api-designer` | OpenAPI specs, REST contracts, DTO design |
-| `@agent-architect` | Add/update agents, skills, MCPs in the toolkit |
+Use `@team-lead` for:
+- new features and endpoints
+- bug fixes and regressions
+- refactors and structural cleanup
+- performance investigations and optimizations
+- test and coverage work
+- legacy migration
+- workspace bootstrap and toolkit maintenance
 
 ## Skill Index
 
-Skills in `.ai-devtoolkit/skills/` contain the authoritative patterns:
+Skills in `.github/skills/` contain the authoritative runtime patterns. Their supporting references, scripts, and templates live beside each skill in the same folder.
 
 | Skill | Covers |
 |-------|--------|
-| `quarkus-backend` | Routing hub → load first, then pick sub-skill |
-| `quarkus-backend-api` | REST resources, DTOs, Bean Validation, error mapping |
-| `quarkus-backend-service` | @Transactional services, MapStruct mappers, CDI |
-| `quarkus-backend-persistence` | Panache entities, repositories, ACL, multi-datasource |
-| `quarkus-backend-async` | Mutiny Uni/Multi, CDI events, SSE, Kafka |
+| `quarkus-backend` | Routing hub → load first, then use local references for API, service, persistence, and async patterns |
 | `quarkus-observability` | Logging, Micrometer, OpenTelemetry, SmallRye Health |
+| `java-best-practices` | Version-aware Java guidance with local references for Java 17, 21, legacy, and docs/comments |
 | `java-test-coverage` | 100% branch coverage with JUnit 5 + Mockito 5 |
 | `java-flow-analysis` | AST-based impact and call graph analysis |
 | `git-atomic-commit` | Conventional commits, pre-commit checklist |
@@ -42,16 +36,21 @@ Skills in `.ai-devtoolkit/skills/` contain the authoritative patterns:
 | `legacy-analysis` | Reverse-engineer JEE/JSF before migration |
 | `flyway-oracle` | Safe Oracle schema migration patterns |
 | `api-design` | OpenAPI 3.1 design and review patterns |
+| `workspace-bootstrap` | Bootstrap workspace adapters, inventory, and MCP validation |
+| `bootstrap-project` | Phase 2 repo-context coverage, public-surface audit, and readiness checks |
 
 ## Workflow Index
 
-Workflows in `.ai-devtoolkit/workflows/` define multi-agent chains:
+Workflows in `.ai-devtoolkit/workflows/` define the internal execution engine used by `team-lead`:
 
 | Workflow | When to use |
 |---------|------------|
-| `feature-implementation` | Full feature: architecture → persistence → service → API → tests |
+| `feature-implementation` | Full feature: analyze → design → implement → review → fix |
+| `bugfix` | Diagnose a defect, isolate the root cause, fix it, and review regression risk |
+| `refactor` | Restructure code safely while preserving behavior and layer boundaries |
+| `optimization` | Improve latency, throughput, query cost, or allocation hotspots |
 | `legacy-migration` | Migrate a legacy JEE/JSF component end-to-end |
-| `test-coverage` | Achieve 100% branch coverage on an existing class |
+| `test-coverage` | Achieve 100% branch coverage on an existing class or failing area |
 
 ## Non-Negotiable Rules
 
@@ -60,3 +59,4 @@ Workflows in `.ai-devtoolkit/workflows/` define multi-agent chains:
 - Never use `@QuarkusTest` or `@QuarkusIntegrationTest` in unit tests.
 - Never mix `@Transactional` and `Uni<T>` directly.
 - Every commit follows conventional commit format (see `git-atomic-commit` skill).
+- Never keep secrets inline in `.vscode/mcp.json` — use `${env:...}` references only.

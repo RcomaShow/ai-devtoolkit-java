@@ -1,25 +1,17 @@
 {
   "name": "quarkus-java-toolkit",
-  "description": "AI development toolkit for Quarkus 3.x + Java 21 microservices. Bundles agents, skills, and workflows for Clean Architecture, legacy migration, TDD, and observability.",
+  "description": "Copilot-first AI development toolkit for Quarkus 3.x + Java 17/21 workspaces. Exposes one public team-lead agent backed by internal specialists, workflows, bootstrap automation, and colocated skill assets.",
   "version": "1.0.0",
-  "keywords": ["quarkus", "java", "clean-architecture", "tdd", "legacy-migration", "oracle", "microservices"],
+  "keywords": ["quarkus", "java17", "java21", "clean-architecture", "tdd", "legacy-migration", "oracle", "microservices"],
   "agents": [
-    "../../agents/orchestrator.agent.md",
-    "../../agents/backend-engineer.agent.md",
-    "../../agents/software-architect.agent.md",
-    "../../agents/legacy-migration.agent.md",
-    "../../agents/tdd-validator.agent.md",
-    "../../agents/test-coverage-engineer.agent.md",
-    "../../agents/code-reviewer.agent.md",
-    "../../agents/database-engineer.agent.md",
-    "../../agents/api-designer.agent.md",
-    "../../agents/agent-architect.agent.md"
+    "../../agents/team-lead.agent.md"
   ],
   "skills": [
     "../../skills/quarkus-backend",
     "../../skills/quarkus-observability",
     "../../skills/java-test-coverage",
     "../../skills/java-flow-analysis",
+    "../../skills/java-best-practices",
     "../../skills/git-atomic-commit",
     "../../skills/clean-architecture",
     "../../skills/domain-driven-design",
@@ -27,7 +19,9 @@
     "../../skills/flyway-oracle",
     "../../skills/api-design",
     "../../skills/tdd-workflow",
-    "../../skills/agent-scaffolding"
+    "../../skills/agent-scaffolding",
+    "../../skills/workspace-bootstrap",
+    "../../skills/bootstrap-project"
   ],
   "instructions": [
     "instructions/quarkus-java.instructions.md",

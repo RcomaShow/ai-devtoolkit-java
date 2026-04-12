@@ -45,8 +45,8 @@ Use `bitbucket-corporate` MCP when:
 
 Add `bitbucket-corporate/*` to `tools:` in these agent types:
 - `software-architect` — before proposing breaking changes to shared branches
-- Domain orchestrators (Tier 2) — for cross-repo PR context
-- Team leads (Tier 3) when instructed to work on a branch
+- `team-lead` — for cross-repo PR context and planning on shared branches
+- Internal specialists only when they directly inspect branch or PR metadata
 
 ## Security Rules
 

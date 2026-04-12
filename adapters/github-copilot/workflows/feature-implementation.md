@@ -12,7 +12,7 @@ safe-outputs: true
 
 # Feature Implementation Workflow
 
-You are implementing a new backend feature for a Quarkus 3.x + Java 21 microservice.
+You are implementing a new backend feature for a Quarkus 3.x + Java 17/21 microservice.
 Read `.ai-devtoolkit/workflows/feature-implementation.workflow.md` for the full step-by-step procedure.
 
 ## Inputs
@@ -32,7 +32,7 @@ If the feature crosses two bounded contexts, add a comment asking for clarificat
 
 ## Step 2 — Persistence Layer
 
-Read `skills/quarkus-backend/persistence/SKILL.md`.
+Read `skills/quarkus-backend/references/persistence.md`.
 Create in order:
 1. `{Entity}Entity` with `@Table`, `@Index`, `@SequenceGenerator`, `@Version`
 2. `{Entity}EntityRepository` (Panache) with named JPQL queries
@@ -43,7 +43,7 @@ Commit: `feat(persistence): add {Entity} persistence layer`
 
 ## Step 3 — Service + Domain Layer
 
-Read `skills/quarkus-backend/service/SKILL.md`.
+Read `skills/quarkus-backend/references/service.md`.
 Create in order:
 1. `{Entity}` domain model (no JPA annotations)
 2. `{Entity}Repository` port interface
@@ -55,7 +55,7 @@ Commit: `feat(service): add {Entity}Service with domain model and MapStruct mapp
 
 ## Step 4 — API Layer
 
-Read `skills/quarkus-backend/api/SKILL.md`.
+Read `skills/quarkus-backend/references/api.md`.
 Create in order:
 1. `Create{Entity}Request` and `Update{Entity}Request` with Bean Validation
 2. `{Entity}Dto` response record

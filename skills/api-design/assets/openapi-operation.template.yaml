@@ -1,0 +1,16 @@
+paths:
+  /api/v1/{resource}:
+    post:
+      summary: Create {resource}
+      operationId: create{Resource}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Create{Resource}Request'
+      responses:
+        '201':
+          description: Created
+        '422':
+          description: Validation failed
