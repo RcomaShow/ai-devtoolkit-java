@@ -1,7 +1,7 @@
 ---
 description: 'Internal meta-agent for creating, updating, auditing, and evolving the ai-devtoolkit. Owns the toolkit lifecycle: asset creation, catalog maintenance, health audits, source↔runtime drift detection, skill gap analysis, and self-improvement workflows.'
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5.4", "Claude Sonnet 4.6 (copilot)"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6"]
 effort: high
 argument-hint: "What to create, repair, or evolve — e.g. 'audit toolkit health', 'add internal specialist', 'detect drift', 'propose missing skills', 'evolve agent catalog'"
 agents: [Explore]
@@ -100,13 +100,15 @@ Update `AI_BOOTSTRAP_IMPROVEMENTS.md` with a structured review outcome.
 ---
 description: "<one-line purpose>"
 tools: [read, search, edit, ...]
-model: ["GPT-5 (copilot)", "Claude Sonnet 4.5 (copilot)"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6"]
 effort: high | medium | low
 argument-hint: "<short usage hint>"
 agents: [Explore, ...]
 user-invocable: false
 ---
 ```
+
+**Note**: `team-lead` public agent uses 4 models (adds Claude Opus 4.6). Specialists use 3 models as shown above.
 
 ### Register the agent
 

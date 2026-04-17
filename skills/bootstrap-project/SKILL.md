@@ -25,7 +25,8 @@ user-invocable: false
 3. Verify `team-lead` and `developer` are the only public agents.
 4. Verify every repository has a companion context skill.
 5. Verify every repository has repo-memory files in `<repo>/.github/memory/`.
-6. Verify MCP coverage and publish a readiness report.
+6. Verify non-repository managed targets are covered by `.github/memory/workspace-shell.md`.
+7. Verify MCP coverage from `.github/bootstrap/control-plane.json` and publish a readiness report.
 
 ## Execution Entry Points
 
@@ -40,5 +41,6 @@ npm run bootstrap:project
 - [ ] `team-lead` and `developer` are the only public agents
 - [ ] Each repository has a mapped context skill
 - [ ] Each repository has `context.md`, `dependencies.md`, and `recent-changes.md` in `.github/memory/`
+- [ ] Non-repository managed targets are covered by workspace shell memory
 - [ ] Required MCP servers are configured
 - [ ] Action items recorded for any uncovered repo

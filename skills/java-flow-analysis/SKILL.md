@@ -54,7 +54,10 @@ python .github/skills/java-flow-analysis/scripts/analyze-java.py impact src/main
 # Direct dependency profile for one class
 python .github/skills/java-flow-analysis/scripts/analyze-java.py deps src/main/java/com/company/{domain}/service/{Entity}Service.java
 
-# XHTML-first flow trace: view -> bean -> downstream layers
+# XHTML-first JSON graph: view -> includes/composite components -> bean -> downstream layers -> DB touchpoints
+python .github/skills/java-flow-analysis/scripts/analyze-java.py xhtml-db-graph src/main/java src/main/webapp/pages/{feature}/{view}.xhtml
+
+# Compatibility alias for the same richer report
 python .github/skills/java-flow-analysis/scripts/analyze-java.py legacy-xhtml src/main/java src/main/webapp/pages/{feature}/{view}.xhtml
 
 # Branch-oriented test matrix
@@ -128,15 +131,21 @@ Step 1 — Read the XHTML page
   Extract EL bindings: #{bean.property}, #{bean.action}, #{bean.subBean.value}
 
 Step 2 — Run the XHTML trace
-  analyze-java.py legacy-xhtml <source-root> <view.xhtml>
+  analyze-java.py xhtml-db-graph <source-root> <view.xhtml>
+  legacy-xhtml remains a compatibility alias for the same richer report
 
 Step 3 — Review the output sections
   resolvedEntryBeans      -> bean names mapped to concrete Java classes
   unresolvedBeans         -> EL names without a safe Java match
+  xhtmlArtifacts          -> included XHTML files, composite components, namespaces, unresolved view links
+  xmlArtifacts            -> related XML/native-query artifacts discovered from the reachable slice
   verticalLayers          -> layer-by-layer nodes touched by the flow
   verticalEdges           -> boundary crossings between layers
   horizontalDependencies  -> same-layer dependencies worth reviewing
   ambiguousDependencies   -> classes with multiple possible targets
+  reachableFiles          -> concrete files reached from the view
+  databaseTouchpoints     -> repositories, entities, tables, and SQL touchpoints
+  graph                   -> canonical JSON node/edge graph for downstream tooling
 
 Step 4 — Validate the trace manually
   Open the resolved backing bean, then confirm:
@@ -147,6 +156,9 @@ Step 4 — Validate the trace manually
 ```
 
 Use this pattern when the user asks to “partire da un file xhtml e capire ogni layer”. That is now a first-class workflow, not an ad hoc investigation.
+
+The command returns JSON by default. Treat that JSON as the canonical machine-readable dependency graph for agent handoff or external tooling.
+The graph now resolves safe XHTML includes, JSF composite component links, and relevant XML/native-query artifacts without relying on project-specific rules.
 
 ### 5 — Horizontal vs Vertical Dependency Review
 

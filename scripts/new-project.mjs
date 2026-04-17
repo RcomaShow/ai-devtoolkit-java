@@ -7,6 +7,7 @@
  *     --name my-domain \
  *     --domain "Gas Transport" \
  *     --repos "repo-core,repo-service-a,repo-service-b" \
+ *     --managed-targets "shell-service-a,shell-service-b" \
  *     --package "com.company.mydomain" \
  *     --stack "quarkus+oracle" \
  *     --java 17
@@ -15,6 +16,7 @@
  *   --name        Workspace identifier (kebab-case) — used in folder names and repo-context skills
  *   --domain      Human-readable domain name — used in generated documentation
  *   --repos       Comma-separated list of repository names
+ *   --managed-targets Comma-separated list of shell-level managed targets that are not normal git repositories
  *   --package     Java base package (com.company.domain)
  *   --stack       Technology stack tag (default: quarkus+oracle)
  *   --java        Java profile to target (17 or 21, default: 21)
@@ -51,6 +53,7 @@ const dryRun = args.has('--dry-run');
 const name = getArg('--name');
 const domain = getArg('--domain') ?? name;
 const repos = (getArg('--repos') ?? '').split(',').map(value => value.trim()).filter(Boolean);
+const managedTargets = (getArg('--managed-targets') ?? '').split(',').map(value => value.trim()).filter(Boolean);
 const javaPackage = getArg('--package') ?? `com.company.${name}`;
 const stack = getArg('--stack') ?? 'quarkus+oracle';
 const javaVersion = getArg('--java') ?? '21';
@@ -79,6 +82,7 @@ const toolkitVersion = fs.existsSync(versionFile)
 console.log(`Initializing workspace: ${name}`);
 console.log(`  Domain:   ${domain}`);
 console.log(`  Repos:    ${repos.join(', ') || '(none — add manually later)'}`);
+console.log(`  Targets:  ${managedTargets.join(', ') || '(none — shell targets can be declared later)'}`);
 console.log(`  Package:  ${javaPackage}`);
 console.log(`  Stack:    ${stack}`);
 console.log(`  Java:     ${javaVersion}`);
@@ -281,6 +285,54 @@ function generateRepoMemoryRecentChangesPlaceholder(repoName) {
 `;
 }
 
+function generateWorkspaceShellMemory() {
+  return `# Workspace Shell Memory
+
+Keep this file compact. It is the stable, developer-owned shell memory for this workspace.
+
+## Active Workspace Root
+
+- ${path.basename(WORKSPACE_ROOT)}
+
+## Managed Shell Targets
+
+${managedTargets.map(target => `- ${target}: workspace-level managed target; keep shell-level facts here instead of forcing repo memory`).join('\n') || '- None declared yet.'}
+
+## MCP Policy
+
+- Baseline required: bitbucket-corporate, oracle-official
+- Optional: mssql-server
+- .ai/memory/mcp-registry.json is a generated mirror; rerun npm run bootstrap:ai after .vscode/mcp.json changes.
+
+## Known Limits
+
+- .ai/memory/workspace-map.json is root-scoped and does not model a full VS Code multi-root session.
+- Keep repo-specific facts in <repo>/.github/memory/ and only shell-level facts here.
+`;
+}
+
+function generateControlPlaneConfig() {
+  return `${JSON.stringify({
+    version: 1,
+    shellMemory: {
+      path: '.github/memory/workspace-shell.md',
+      owner: 'developer',
+      managedByBootstrap: false,
+    },
+    managedTargets: managedTargets.map(target => ({
+      name: target,
+      path: target,
+      kind: 'workspace-service',
+      contextSurface: 'workspace-shell',
+    })),
+    mcpPolicy: {
+      source: '.vscode/mcp.json',
+      baselineRequired: ['bitbucket-corporate', 'oracle-official'],
+      optional: ['mssql-server'],
+    },
+  }, null, 2)}\n`;
+}
+
 // --- Copy toolkit agents ---------------------------------------------------
 
 async function copyAgents() {
@@ -330,6 +382,31 @@ async function copyPrompts() {
   }
 }
 
+async function copyLegacyWorkspaceSurface() {
+  const legacySrc = path.join(TOOLKIT_ROOT, 'templates', 'legacy');
+  const legacyDst = path.join(WORKSPACE_ROOT, '.github', 'legacy');
+
+  if (!fs.existsSync(legacySrc)) {
+    return;
+  }
+
+  await copyDirectoryTree(legacySrc, legacyDst);
+}
+
+async function copyVscodeTemplates() {
+  const mcpEnvTemplateSrc = path.join(TOOLKIT_ROOT, 'templates', 'mcp.env.template.json');
+  const mcpEnvTemplateDst = path.join(WORKSPACE_ROOT, '.vscode', 'mcp.env.template.json');
+
+  if (fs.existsSync(mcpEnvTemplateSrc)) {
+    await copyTextFile(mcpEnvTemplateSrc, mcpEnvTemplateDst);
+  }
+}
+
+async function generateWorkspaceControlPlane() {
+  await writeFile(path.join(WORKSPACE_ROOT, '.github', 'bootstrap', 'control-plane.json'), generateControlPlaneConfig());
+  await writeFile(path.join(WORKSPACE_ROOT, '.github', 'memory', 'workspace-shell.md'), generateWorkspaceShellMemory());
+}
+
 // --- Generate repository context skills -----------------------------------
 
 async function generateRepositoryContexts() {
@@ -371,6 +448,7 @@ async function generateAgentsMd() {
 ## Scope
 - Treat this workspace root as a multi-repo shell, not as a single Git repository.
 - Detect repository folders before writing repo-local agent files.
+- Keep curated shell-level facts in .github/memory/workspace-shell.md and keep .ai/memory/* generated-only.
 - Use repo-local \.github/memory/ only for compact repository memory, not for duplicating the workspace runtime.
 - Use [.ai/memory/workspace-map.json](.ai/memory/workspace-map.json) as the live workspace inventory.
 
@@ -378,6 +456,8 @@ async function generateAgentsMd() {
 - \`.github/agents/\` — canonical runtime agent definitions
 - \`.github/skills/\` — canonical runtime skills and colocated assets
 - \`.github/prompts/\` — canonical prompt entry points
+- \`.github/bootstrap/control-plane.json\` — declarative bootstrap policy for shell memory, managed targets, and MCP baseline
+- \`.github/memory/workspace-shell.md\` — developer-owned shell memory for cross-repo and non-repo targets
 - \`.ai/memory/\` — machine-generated bootstrap inventory
 - \`<repo>/.github/memory/\` — compact repo-local memory for stable facts and live technical context
 
@@ -394,6 +474,9 @@ ${repos.map(repo => `- \`.github/skills/${name}-${repo.replace(/[-_]/g, '-')}/SK
 ## Repository Memory
 ${repos.map(repo => `- \`${repo}/.github/memory/\``).join('\n') || '- Add repo-local memory folders as repositories are onboarded.'}
 
+## Managed Shell Targets
+${managedTargets.map(target => `- \`${target}\` -> workspace-shell context`).join('\n') || '- Add shell-level managed targets in .github/bootstrap/control-plane.json when needed.'}
+
 ## Domain
 - Name: ${name}
 - Domain: ${domain}
@@ -407,12 +490,14 @@ ${repos.map(repo => `- \`${repo}\``).join('\n') || '- (add repositories here)'}
 
 ## MCP Policy
 - Read [.vscode/mcp.json](.vscode/mcp.json) before proposing new MCP servers.
+- Keep baseline-vs-optional policy in .github/bootstrap/control-plane.json.
 - Reuse existing MCPs: \`bitbucket-corporate\`, \`oracle-official\`.
 - Never keep secrets inline in \`.vscode/mcp.json\` — use environment variable references only.
 
 ## Safety
 - Never overwrite existing repo-local AGENTS.md or .github assets without explicit request.
 - Do not assume every repository should inherit workspace-level adapters automatically.
+- Do not overwrite .github/memory/workspace-shell.md; bootstrap may scaffold it once but it is developer-owned afterward.
 - Do not duplicate workspace agents or shared skills inside repo-local .github; repo-local .github/memory is the approved repo-memory surface.
 `;
 
@@ -440,6 +525,8 @@ async function generatePackageJson() {
       'bootstrap:agents': 'powershell -NoProfile -NonInteractive -File .github/skills/agent-scaffolding/scripts/scaffold-agents.ps1',
       'bootstrap:agents:audit': 'powershell -NoProfile -NonInteractive -File .github/skills/agent-scaffolding/scripts/scaffold-agents.ps1 -AuditOnly',
       'bootstrap:project': 'powershell -NoProfile -NonInteractive -File .github/skills/bootstrap-project/scripts/bootstrap-project.ps1',
+      'legacy:case': 'powershell -NoProfile -NonInteractive -File .github/skills/legacy-analysis/scripts/new-legacy-case.ps1',
+      'legacy:analyze:xhtml': 'powershell -NoProfile -NonInteractive -File .github/skills/legacy-analysis/scripts/run-legacy-xhtml-analysis.ps1',
       'memory:refresh': 'node .github/skills/repo-memory/scripts/refresh-repo-memory.mjs --all',
       'toolkit:health': 'powershell -NoProfile -NonInteractive -File .github/skills/toolkit-health/scripts/audit-toolkit-health.ps1 -Full'
     }
@@ -454,6 +541,9 @@ async function main() {
   await copyAgents();
   await copySkills();
   await copyPrompts();
+  await copyLegacyWorkspaceSurface();
+  await copyVscodeTemplates();
+  await generateWorkspaceControlPlane();
   await generateRepositoryContexts();
   await generateRepositoryMemory();
   await generateAgentsMd();
@@ -475,12 +565,13 @@ async function main() {
     console.log('  1. Review .github/agents/team-lead.agent.md for premium orchestration and .github/agents/developer.agent.md for mini-model execution');
     console.log('  2. Fill in repository concepts, templates, and guardrails in .github/skills/{name}-*/');
     console.log('  3. Fill in <repo>/.github/memory/context.md with stable repo facts and traps');
-    console.log('  4. Review .github/prompts/choose-runtime-profile.prompt.md for model and effort selection guidance');
-    console.log('  5. Review AGENTS.md for workspace-specific operating rules');
-    console.log('  6. Run: npm run bootstrap:ai');
-    console.log('  7. Run: npm run memory:refresh');
-    console.log('  8. Run: npm run bootstrap:security:audit');
-    console.log('  9. Configure .vscode/mcp.json with oracle-official and bitbucket-corporate');
+    console.log('  4. Review .github/legacy/ for the standard legacy analysis surface and use npm run legacy:case or npm run legacy:analyze:xhtml');
+    console.log('  5. Review .github/prompts/choose-runtime-profile.prompt.md for model and effort selection guidance');
+    console.log('  6. Review AGENTS.md for workspace-specific operating rules');
+    console.log('  7. Run: npm run bootstrap:ai');
+    console.log('  8. Run: npm run memory:refresh');
+    console.log('  9. Run: npm run bootstrap:security:audit');
+    console.log(' 10. Configure .vscode/mcp.json with oracle-official and bitbucket-corporate');
   }
 }
 

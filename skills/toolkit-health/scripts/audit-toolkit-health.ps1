@@ -13,7 +13,7 @@ $sourceSkillsDir = Join-Path $toolkitRoot 'skills'
 $runtimeSkillsDir = Join-Path $runtimeRoot 'skills'
 
 $requiredAgentFields = @('description', 'tools', 'effort', 'argument-hint', 'agents', 'user-invocable')
-$allowedModels = @('GPT-5 (copilot)', 'Claude Sonnet 4.5 (copilot)')
+$allowedModels = @('GPT-5.4', 'GPT-5.3 Codex', 'Claude Sonnet 4.6', 'Claude Opus 4.6')
 $allowedToolAliases = @('read', 'search', 'edit', 'execute', 'todo', 'agent', 'web')
 
 function Get-FrontmatterBlock {

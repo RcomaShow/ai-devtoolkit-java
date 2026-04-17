@@ -1,0 +1,14 @@
+{
+  "runId": "{run-id}",
+  "caseId": "{case-id}",
+  "title": "{title}",
+  "generatedAt": "{updated-at}",
+  "entrypoint": {
+    "type": "{entrypoint-type}",
+    "path": "{entrypoint}"
+  },
+  "sourceRoot": "{source-root}",
+  "notes": [
+    "Store raw graph, SQL, DDL, and transient exports beside this file for this run only."
+  ]
+}

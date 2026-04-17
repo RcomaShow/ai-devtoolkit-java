@@ -13,19 +13,22 @@ user-invocable: false
 | Agent | Effort | Role |
 |-------|--------|------|
 | `team-lead` | high | Premium orchestration for intake, routing, review, and fix loops |
-| `developer` | medium | Smaller-model direct execution for bounded tasks without sub-agents |
+| `developer` | medium | Focused bounded development with a fixed Plan -> Implement -> Review protocol |
 
 ### Internal Specialists
 | Agent | Effort | Role |
 |-------|--------|------|
+| `memory-manager` | medium | Repository memory refresh and staleness detection |
+| `context-optimizer` | low | Context compression and selective loading |
 | `bootstrap-workspace` | high | Workspace bootstrap and inventory repair |
 | `agent-architect` | high | Catalog and toolkit maintenance |
-| `orchestrator` | medium | Hidden compatibility router |
+| `orchestrator` | medium | Hidden planner-router for the fixed development phase chain |
 | `software-architect` | high | Architecture, boundaries, ADRs |
 | `backend-engineer` | medium | Quarkus implementation |
 | `api-designer` | medium | API contracts and DTO review |
 | `database-engineer` | medium | Flyway, Oracle, persistence design |
 | `legacy-migration` | high | Legacy reverse-engineering and migration |
+| `xhtml-db-tracer` | medium | XHTML/JSF entrypoint tracing down to DB touchpoints |
 | `tdd-validator` | high | Test-first and regression protection |
 | `test-coverage-engineer` | high | Systematic coverage closure |
 | `code-reviewer` | medium | Quality, regression, and guardrail review |
@@ -47,8 +50,8 @@ user-invocable: true | false
 
 Notes:
 - Omit `name` unless you need a display alias. If present, it must match the filename without `.agent.md`.
-- `model` is optional. When present, use only documented Copilot aliases such as `GPT-5 (copilot)` and `Claude Sonnet 4.5 (copilot)`.
-- Smaller or faster model aliases vary by tenant. Do not hardcode them in shared toolkit assets.
+- `model` is optional. When present, use the current workspace-approved aliases already used by the runtime catalog, such as `GPT-5.4`, `GPT-5.3 Codex`, `Claude Sonnet 4.6`, and `Claude Opus 4.6`.
+- Smaller or faster model aliases vary by tenant. Do not hardcode them in shared toolkit assets unless they are already used by the public runtime contract.
 - `tools` must use built-in aliases (`read`, `search`, `edit`, `execute`, `todo`, `agent`, `web`) or MCP patterns like `oracle-official/*`.
 
 ## Public Agent Templates
@@ -57,28 +60,30 @@ Use these only when editing `team-lead`, `developer`, or intentionally redefinin
 
 ```markdown
 ---
-description: "Premium orchestration entry point for the Copilot-first runtime."
+description: "Premium orchestration entry point for the Copilot-first runtime with a fixed 4-phase protocol."
 tools: [read, search, edit, execute, todo, agent]
-model: ["GPT-5 (copilot)", "Claude Sonnet 4.5 (copilot)"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6", "Claude Opus 4.6"]
 effort: high
 argument-hint: "Describe the outcome you need"
-agents: [Explore, software-architect, backend-engineer, code-reviewer]
+agents: [context-optimizer, Explore, orchestrator, software-architect, backend-engineer, legacy-migration, xhtml-db-tracer, tdd-validator, test-coverage-engineer, code-reviewer, database-engineer, api-designer, bootstrap-workspace, agent-architect, memory-manager]
 user-invocable: true
 ---
 ```
+
+`team-lead` must be scaffolded with the fixed 4-phase protocol body: Context & Classification, Planning & Routing, Dynamic Execution, and Review Loop.
 
 ```markdown
 ---
-description: "Bounded direct execution path for focused tasks."
-tools: [read, search, edit, execute, todo]
+description: "Bounded direct execution path for focused tasks with a fixed Plan -> Implement -> Review protocol."
+tools: [read, search, edit, execute, todo, agent]
 effort: medium
 argument-hint: "Describe the focused task you need"
-agents: []
+agents: [context-optimizer, memory-manager, Explore]
 user-invocable: true
 ---
 ```
 
-`developer` intentionally inherits the active picker/default model so each tenant can pair it with the smaller or faster approved model they actually expose.
+`developer` intentionally inherits the active picker/default model so each tenant can pair it with the smaller or faster approved model they actually expose. `developer` must not be scaffolded as an open-ended iterative loop; the public contract is a fixed 3-phase protocol with mandatory review.
 
 ## Internal Specialist Template
 
@@ -86,7 +91,7 @@ user-invocable: true
 ---
 description: "{one-line internal role}"
 tools: [read, search, edit, todo, agent]
-model: ["GPT-5 (copilot)", "Claude Sonnet 4.5 (copilot)"]
+model: ["GPT-5.4", "GPT-5.3 Codex", "Claude Sonnet 4.6"]
 effort: medium
 argument-hint: "{short usage hint}"
 agents: [Explore]
@@ -111,7 +116,7 @@ user-invocable: false
 
 - Script: `./scripts/scaffold-agents.ps1`
 - Guardrails: `./references/guardrails.md`
-- Template: `./assets/agent-template.md`
+- Template: `./assets/agent-template.md` for internal specialists only; public agents must use the dedicated templates above
 
 ## Audit Checklist
 
@@ -123,6 +128,9 @@ user-invocable: false
 - [ ] `team-lead` and `developer` are the only public agents
 - [ ] Internal specialists use `user-invocable: false`
 - [ ] `team-lead` references the internal specialists it should delegate to
+- [ ] `team-lead` delegates to `orchestrator` for the non-trivial planning stage
+- [ ] `developer` defines a fixed Plan -> Implement -> Review protocol
+- [ ] `developer` makes Review mandatory and re-enters Implement when issues are found
 
 ## Repo Context Checklist
 

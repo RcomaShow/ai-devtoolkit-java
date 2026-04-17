@@ -1,0 +1,18 @@
+{
+  "caseId": "{case-id}",
+  "title": "{title}",
+  "status": "draft",
+  "createdAt": "{created-at}",
+  "updatedAt": "{updated-at}",
+  "entrypoint": {
+    "type": "{entrypoint-type}",
+    "path": "{entrypoint}"
+  },
+  "sourceRoot": "{source-root}",
+  "artifacts": {
+    "analysis": "analysis.md",
+    "javaClassLogic": "java-class-logic.md",
+    "oracleSqlInventory": "oracle-sql-inventory.md",
+    "latestGeneratedRun": "generated/{run-id}"
+  }
+}

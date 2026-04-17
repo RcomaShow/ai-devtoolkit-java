@@ -2,7 +2,7 @@
 name: test-coverage
 description: "Internal workflow for test and coverage work through branch analysis -> plan -> test implementation -> review -> fix -> finalize. Invoked by team-lead."
 triggers: ["test", "coverage", "branch coverage", "junit", "mockito", "copertura", "100%", "write tests", "scrivi test"]
-agents: [test-coverage-engineer, tdd-validator, code-reviewer]
+agents: [context-optimizer, orchestrator, test-coverage-engineer, tdd-validator, code-reviewer]
 skills: [java-test-coverage, tdd-workflow, git-atomic-commit]
 estimated-steps: 5
 ---
@@ -11,29 +11,30 @@ estimated-steps: 5
 
 ## Purpose
 
-Use this workflow when the main outcome is better test protection or branch coverage on existing code.
+Use this workflow when the main outcome is better test protection or branch coverage on existing code. The fixed outer chain remains context -> plan -> execute -> review -> fix.
 
 ## Steps
 
-### Step 1 — Analyze the target
+### Step 1 — Scope context and target surface
 
-**Lead specialist:** `test-coverage-engineer`
-**Load first:** `skills/java-test-coverage/SKILL.md`
+**Lead specialist:** `context-optimizer`
 
 Produce:
 - target classes and methods
-- branch matrix or scenario map
-- required builders, mocks, and fixtures
+- repo-memory and test surface to load
+- missing source or coverage context still needed
 
 ### Step 2 — Plan the test set
 
-**Lead specialist:** `test-coverage-engineer`
-**Support:** `tdd-validator`
+**Lead specialist:** `orchestrator`
+**Support:** `test-coverage-engineer`
+**Load first:** `skills/java-test-coverage/SKILL.md`
 
 Define:
-- minimal test cases needed
-- order of implementation
-- gaps that need refactoring rather than more tests
+- target classes and methods
+- branch matrix or scenario map
+- required builders, mocks, and fixtures
+- re-entry step if the plan reveals production-code refactoring needs
 
 ### Step 3 — Implement or update tests
 
@@ -55,7 +56,7 @@ Check:
 ### Step 5 — Fix and finalize
 
 **Owner:** `team-lead`
-**Loop rule:** if the branch plan is incomplete, return to Step 1; if test quality is weak, return to Step 3.
+**Loop rule:** if context is incomplete, return to Step 1. If the branch plan is incomplete, return to Step 2; if test quality is weak, return to Step 3.
 
 ## Exit Criteria
 

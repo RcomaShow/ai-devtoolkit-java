@@ -17,13 +17,74 @@ Choose the real entrypoint first:
 - Batch or scheduler: start from the launcher or timer class
 - MDB/listener: start from the consumed event or queue
 
-For JSF/Facelets systems, the preferred workflow is now:
+For JSF/Facelets systems, the preferred workflow is now a one-session run that always starts from the XHTML and persists the raw graph in the case run folder:
 
-```bash
-python .github/skills/java-flow-analysis/scripts/analyze-java.py legacy-xhtml <source-root> <view.xhtml>
+```powershell
+npm run legacy:analyze:xhtml -- --case verifica-capacita --title "Verifica Capacita" --entrypoint <path-to-view>\verificaCapacita.xhtml --sourceRoot <path-to-legacy-module-root>
 ```
 
-This gives you the first-pass map from view bindings to backing bean, service/EJB, repository/DAO, and entity or external clients.
+The lower-level analyzer remains available when you need to debug the trace directly:
+
+```bash
+python .github/skills/java-flow-analysis/scripts/analyze-java.py xhtml-db-graph <source-root> <view.xhtml>
+```
+
+`legacy-xhtml` remains available as a compatibility alias, but the canonical output is now the richer JSON graph.
+
+This gives you the first-pass map from view bindings to backing bean, service/EJB, repository/DAO, entity, SQL, and table touchpoints.
+When the view uses includes, composite components, or XML-backed native queries, the graph now attempts to pull those artifacts into the same evidence set.
+
+## Skill Assets
+
+- [Legacy analysis template](./assets/legacy-analysis.template.md)
+- [Legacy case scaffolder](./scripts/new-legacy-case.ps1)
+- [One-session XHTML runner](./scripts/run-legacy-xhtml-analysis.ps1)
+- Standard workspace artifact surface: `.github/legacy/`
+
+## Standard Workspace Layout
+
+Use one stable case folder per feature slice and keep regenerated raw outputs in a timestamped run folder so multiple analyses do not overwrite each other.
+
+```text
+.github/legacy/
+    README.md
+    templates/
+    cases/<case-id>/
+        case.json
+        analysis.md
+        java-class-logic.md
+        oracle-sql-inventory.md
+        generated/<run-id>/
+            run.json
+            ...raw graph / ddl / extracted evidence...
+```
+
+When the workspace has already been bootstrapped, prefer scaffolding a case folder first:
+
+```powershell
+powershell -NoProfile -NonInteractive -File .github/skills/legacy-analysis/scripts/new-legacy-case.ps1 \
+    -Case verifica-capacita \
+    -Title "Verifica Capacita" \
+    -Entrypoint <path-to-view>\verificaCapacita.xhtml \
+    -SourceRoot <path-to-legacy-module-root>
+```
+
+If the requirement is to always scan every layer from XHTML down to DB touchpoints in one pass, use the runner instead of calling the analyzer manually:
+
+```powershell
+powershell -NoProfile -NonInteractive -File .github/skills/legacy-analysis/scripts/run-legacy-xhtml-analysis.ps1 \
+    -Case verifica-capacita \
+    -Title "Verifica Capacita" \
+    -Entrypoint <path-to-view>\verificaCapacita.xhtml \
+    -SourceRoot <path-to-legacy-module-root>
+```
+
+The runner will:
+- scaffold or refresh the stable case folder
+- create a timestamped run folder under `generated/<run-id>/`
+- execute `xhtml-db-graph`
+- persist the raw graph as `xhtml-db-graph.json`
+- update `run.json` with artifact pointers and a compact summary
 
 ## Phase 1 — Inventory
 
@@ -50,13 +111,16 @@ Step 1 — Extract EL bindings from the view
     Examples: #{bean.search}, #{bean.rows}, #{bean.selectedItem.code}
 
 Step 2 — Resolve the backing bean
-    Use analyze-java.py legacy-xhtml to map bean names to Java classes.
+    Use analyze-java.py xhtml-db-graph to map bean names to Java classes and DB touchpoints.
 
 Step 3 — Review direct Java dependencies
     Run analyze-java.py deps on the resolved bean and downstream classes.
 
 Step 4 — Confirm the full chain
     XHTML -> Backing Bean -> EJB/Service -> DAO/Repository -> Entity/Table/External system
+
+Step 5 — Keep the graph as evidence
+    Preserve the JSON graph, reachable file list, and ambiguity sections for the migration report.
 ```
 
 Record both:
@@ -111,6 +175,8 @@ For each entity or DAO touched by the flow:
 4. Note stored procedures, triggers, and batch side effects.
 5. Document external calls made in the same use case.
 
+If the migration scope also requires Oracle DDL recovery or SQL Server target scripts, switch into `legacy-ddl-conversion.workflow.md` before deciding the target type mappings.
+
 ```java
 @ApplicationScoped
 public class {Entity}AclTranslator {
@@ -151,3 +217,5 @@ Use the asset template beside this skill and include at least:
 - business rules with evidence
 - schema touchpoints and side effects
 - migration mapping and open questions
+
+Keep the top-level `analysis.md` compact. Put the per-class logic inventory in `java-class-logic.md` and the Oracle object inventory in `oracle-sql-inventory.md`.

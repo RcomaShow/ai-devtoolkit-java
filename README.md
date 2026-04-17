@@ -16,8 +16,11 @@ Copilot-first AI development toolkit for Java 17/21 + Quarkus workspaces. It is 
 | Workflows | `workflows/` | Analyze -> plan -> execute -> review -> fix -> finalize flows |
 | Bootstrap engine | `skills/workspace-bootstrap/scripts/bootstrap-ai-workspace.mjs` | Copilot runtime setup and workspace inventory |
 | Project generator | `scripts/new-project.mjs` | Multi-repo workspace initializer with repo-context skills and repo-memory scaffolding |
+| Legacy workspace surface | `templates/legacy/` | Standard `.github/legacy/` layout for compact legacy reports, per-class logic, and Oracle SQL inventories |
 | Toolkit health | `skills/toolkit-health/` | Self-audit: drift detection, orphan scan, broken-ref check, skill-gap analysis |
 | MCP guides | `mcp/` | Oracle, Bitbucket, SonarQube setup guidance |
+
+The source catalog keeps these assets under `templates/legacy/`; project initialization materializes them into `.github/legacy/` in the runtime catalog.
 
 ---
 
@@ -29,6 +32,9 @@ The active runtime is intentionally simple:
 .github/agents/      ← runtime agents copied into the workspace
 .github/skills/      ← runtime skills copied into the workspace
 .github/prompts/     ← runtime prompt entry points
+.github/bootstrap/control-plane.json ← declarative shell-target and MCP policy
+.github/memory/workspace-shell.md ← developer-owned shell memory for cross-repo facts
+.github/legacy/      ← standard legacy-analysis workspace surface and generated case folders
 .ai/memory/          ← generated inventory only
 <repo>/.github/memory/ ← compact repository memory (stable facts + live technical context)
 .ai-devtoolkit/      ← reusable source catalog (this submodule)
@@ -38,8 +44,21 @@ Key rules:
 - Public surface stays minimal: `team-lead` for premium orchestration, `developer` for bounded direct execution.
 - Specialist agents stay hidden and are invoked internally.
 - Repository-specific knowledge is split between repo-context skills for durable rules and `<repo>/.github/memory/` for compact live context.
+- Non-git services belong in `managedTargets` in `.github/bootstrap/control-plane.json`, not in the generated `repositories` list.
+- Managed shell targets without repo-local memory should use `.github/memory/workspace-shell.md` and `.github/bootstrap/control-plane.json` instead of `<repo>/.github/memory/`.
 - `.ai/memory/` remains generated workspace inventory only; it is not the place for repo notes or business rules.
 - Bootstrap stays multi-repo, but it no longer generates a public catalog per repository.
+- `.ai/memory/workspace-map.json` is root-scoped today; it does not represent a whole VS Code multi-root session.
+- Shell-level durable facts live in `.github/memory/workspace-shell.md`; keep repo-specific facts in repo-local memory.
+- Treat `.ai/memory/mcp-registry.json` as a generated mirror of `.vscode/mcp.json`, and refresh it after MCP configuration changes.
+
+---
+
+## Operational Caveats
+
+- `team-lead` may use a fast path only for trivial read-only questions, repo-memory refresh, or bootstrap checks. Anything non-trivial should still use the fixed `context-optimizer -> orchestrator -> execution -> verification -> review` chain.
+- Do not overload `repo` to mean only `folder with .git`. Non-git services should be declared as managed shell targets unless they explicitly need repo-local context.
+- Separate baseline required MCPs from optional task-scoped servers. Example: `oracle-official` and `bitbucket-corporate` can be baseline, while `mssql-server` remains optional for Oracle -> T-SQL or SQL Server target validation.
 
 ---
 
@@ -59,6 +78,7 @@ node .ai-devtoolkit/scripts/new-project.mjs \
   --name my-domain \
   --domain "My Business Domain" \
   --repos "repo-core,repo-service-a,repo-service-b" \
+  --managed-targets "shell-service-a,shell-service-b" \
   --package "com.company.mydomain" \
   --stack "quarkus+oracle" \
   --java 17
@@ -70,6 +90,9 @@ This command:
 - creates `team-lead` and `developer` as the only public agents
 - generates one repo-context skill per repository in `.github/skills/{name}-{repo}/`
 - scaffolds `<repo>/.github/memory/` for repositories that already exist in the workspace
+- scaffolds `.github/bootstrap/control-plane.json` and `.github/memory/workspace-shell.md`
+- scaffolds `.github/legacy/` as the standard workspace surface for legacy analysis cases
+- materializes `.vscode/mcp.env.template.json` for structured local MCP configuration
 - creates `AGENTS.md` and `package.json`
 
 Preview first:
@@ -87,6 +110,8 @@ After generation, edit:
 | `.github/skills/{name}-{repo}/SKILL.md` | repository responsibilities, vocabulary, key rules |
 | `.github/skills/{name}-{repo}/references/guardrails.md` | repository-specific guardrails |
 | `<repo>/.github/memory/context.md` | compact stable facts, entry points, traps, and migration notes |
+| `.github/memory/workspace-shell.md` | shell-level operating facts, managed non-repo targets, and MCP notes |
+| `.github/legacy/` | standard location for compact legacy reports, Oracle inventories, and generated evidence |
 | `AGENTS.md` | workspace operating rules |
 
 Then refresh the generated repo-memory files:
@@ -103,9 +128,26 @@ These files are intentionally compact so agents can load them before large tasks
 
 ### 4. Configure MCPs
 
-Copy `templates/mcp.json.template` to `.vscode/mcp.json` and keep secrets in environment variables only.
+Copy `.ai-devtoolkit/templates/mcp.json.template` to `.vscode/mcp.json` and keep secrets in environment variables only.
+Use `.vscode/mcp.env.template.json` as the local structured JSON template for MCP secrets and connection strings.
+Keep baseline required MCPs and optional task-scoped MCPs in `.github/bootstrap/control-plane.json`.
+If you add or remove MCP servers, rerun `npm run bootstrap:ai` before trusting `.ai/memory/mcp-registry.json` or any readiness report that depends on it.
 
-### 5. Run bootstrap
+### 5. Initialize a legacy case when needed
+
+```powershell
+npm run legacy:case -- --case verifica-capacita --title "Verifica Capacita" --entrypoint <path-to-view>\verificaCapacita.xhtml --sourceRoot <path-to-legacy-module-root>
+```
+
+Stable case documents stay in `.github/legacy/cases/<case-id>/`. Regenerated raw artifacts go in `.github/legacy/cases/<case-id>/generated/<run-id>/`.
+
+To force a full XHTML -> Java -> DB scan in one command and persist the raw graph in the current run folder:
+
+```powershell
+npm run legacy:analyze:xhtml -- --case verifica-capacita --title "Verifica Capacita" --entrypoint <path-to-view>\verificaCapacita.xhtml --sourceRoot <path-to-legacy-module-root>
+```
+
+### 6. Run bootstrap
 
 ```bash
 npm run bootstrap:ai
@@ -125,21 +167,26 @@ npm run memory:refresh
 | Agent | Role |
 |-------|------|
 | `team-lead` | Premium orchestration for broad or multi-step work with hidden specialist delegation |
-| `developer` | Direct execution for smaller paid models on bounded tasks without sub-agent delegation |
+| `developer` | Focused bounded development with a fixed Plan -> Implement -> Review protocol and mandatory review re-entry |
 
 ### Model Profiles
 
 | Agent | Model family | Default effort | Notes |
 |-------|--------------|----------------|-------|
-| `team-lead` | `GPT-5 (copilot)`, `Claude Sonnet 4.5 (copilot)` | `high` | Uses documented Copilot aliases for premium orchestration |
-| `developer` | Inherits active picker/default | `medium` | Best for focused coding; choose your tenant's smaller or faster approved model manually when available |
+| `team-lead` | `GPT-5.4`, `GPT-5.3 Codex`, `Claude Sonnet 4.6`, `Claude Opus 4.6` | `high` | Premium models for orchestration |
+| `developer` | Inherits active picker/default | `medium` | Best for focused coding; fixed Plan -> Implement -> Review flow with mandatory review re-entry |
+| Specialists | `GPT-5.4`, `GPT-5.3 Codex`, `Claude Sonnet 4.6` | varies | Internal agents for focused domain work |
 
 If you need a specific depth, ask explicitly for `effort low`, `effort medium`, or `effort high` in the prompt.
+
+Contract semantics for public agents are defined by `.github/copilot-instructions.md` in the runtime catalog and by `.ai-devtoolkit/adapters/github-copilot/copilot-instructions.md` in the source catalog.
 
 ### Internal Specialists
 
 | Agent | Role |
 |-------|------|
+| `memory-manager` | Repository memory refresh and staleness detection |
+| `context-optimizer` | Context compression and selective loading |
 | `software-architect` | Architecture analysis, ADRs, boundary decisions |
 | `backend-engineer` | Quarkus implementation |
 | `api-designer` | API contracts and DTO design |
@@ -150,7 +197,7 @@ If you need a specific depth, ask explicitly for `effort low`, `effort medium`, 
 | `code-reviewer` | Review and risk detection |
 | `bootstrap-workspace` | Workspace bootstrap and inventory repair |
 | `agent-architect` | Catalog, workflow, MCP maintenance, and self-evolution |
-| `orchestrator` | *(deprecated)* Compatibility shim — routes to `team-lead` / `developer` |
+| `orchestrator` | Hidden planner-router for the fixed development phase chain |
 
 ---
 
@@ -189,6 +236,7 @@ Core workflows used by `team-lead`:
 - `bugfix`
 - `refactor`
 - `optimization`
+- `legacy-gap-analysis`
 - `legacy-migration`
 - `test-coverage`
 
@@ -218,6 +266,8 @@ Core workflows used by `team-lead`:
 4. Split repo context cleanly: skills hold durable rules, repo memory holds compact live context.
 5. Use file-based context compression before widening the prompt: read the smallest useful memory set first.
 6. Preserve multi-repo bootstrap without reintroducing public agent sprawl.
+7. Separate generated topology from curated shell context.
+8. Make fast-path exceptions and optional MCPs explicit instead of implicit.
 
 ---
 

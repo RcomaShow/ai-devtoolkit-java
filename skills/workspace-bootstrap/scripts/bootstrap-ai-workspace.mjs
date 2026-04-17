@@ -24,6 +24,16 @@ const deprecatedFlags = ['--open-agent-compat', '--shared-skills', '--shared-age
 const adapterFolders = ['.github'];
 const processNames = ['code', 'node'];
 const legacyManagedRoots = ['.claude', '.gemini', '.cursor', 'agents', '.agents'];
+const defaultShellMemory = Object.freeze({
+  path: '.github/memory/workspace-shell.md',
+  owner: 'developer',
+  managedByBootstrap: false,
+});
+const defaultMcpPolicy = Object.freeze({
+  source: '.vscode/mcp.json',
+  baselineRequired: ['bitbucket-corporate', 'oracle-official'],
+  optional: [],
+});
 
 async function pathExists(targetPath) {
   try {
@@ -108,6 +118,14 @@ async function detectRootAdapters() {
   return found;
 }
 
+async function detectLocalAgentAssets(fullPath) {
+  return {
+    hasAgents: await pathExists(path.join(fullPath, 'AGENTS.md')),
+    hasClaude: await pathExists(path.join(fullPath, 'CLAUDE.md')),
+    hasGithub: await pathExists(path.join(fullPath, '.github')),
+  };
+}
+
 function classifyMode(processes) {
   return new Set(processes).has('code') ? 'IDE' : 'TERMINAL';
 }
@@ -123,11 +141,7 @@ async function scanTopLevelFolders() {
   const utilityDirectories = [];
 
   for (const directory of directories) {
-    const assets = {
-      hasAgents: await pathExists(path.join(directory.fullPath, 'AGENTS.md')),
-      hasClaude: await pathExists(path.join(directory.fullPath, 'CLAUDE.md')),
-      hasGithub: await pathExists(path.join(directory.fullPath, '.github')),
-    };
+    const assets = await detectLocalAgentAssets(directory.fullPath);
 
     const record = {
       name: directory.name,
@@ -150,12 +164,92 @@ async function scanTopLevelFolders() {
   return { repositories, utilityDirectories };
 }
 
+function normalizeStringArray(values) {
+  return (Array.isArray(values) ? values : [])
+    .map(value => String(value ?? '').trim())
+    .filter(Boolean);
+}
+
+async function loadControlPlane() {
+  const parsed = await readJsonIfExists(path.join(workspaceRoot, '.github', 'bootstrap', 'control-plane.json'));
+  const shellMemorySource = parsed?.shellMemory && typeof parsed.shellMemory === 'object' ? parsed.shellMemory : {};
+  const mcpPolicySource = parsed?.mcpPolicy && typeof parsed.mcpPolicy === 'object' ? parsed.mcpPolicy : {};
+  const managedTargets = (Array.isArray(parsed?.managedTargets) ? parsed.managedTargets : [])
+    .filter(target => target && typeof target === 'object')
+    .map(target => ({
+      name: String(target.name ?? target.path ?? '').trim(),
+      path: String(target.path ?? target.name ?? '').trim().replaceAll('\\', '/'),
+      kind: String(target.kind ?? 'workspace-service').trim() || 'workspace-service',
+      contextSurface: String(target.contextSurface ?? 'workspace-shell').trim() || 'workspace-shell',
+    }))
+    .filter(target => target.path);
+
+  return {
+    source: '.github/bootstrap/control-plane.json',
+    shellMemory: {
+      path: String(shellMemorySource.path ?? defaultShellMemory.path).trim().replaceAll('\\', '/') || defaultShellMemory.path,
+      owner: String(shellMemorySource.owner ?? defaultShellMemory.owner).trim() || defaultShellMemory.owner,
+      managedByBootstrap: Boolean(shellMemorySource.managedByBootstrap),
+    },
+    managedTargets,
+    mcpPolicy: {
+      source: String(mcpPolicySource.source ?? defaultMcpPolicy.source).trim().replaceAll('\\', '/') || defaultMcpPolicy.source,
+      baselineRequired: normalizeStringArray(mcpPolicySource.baselineRequired).length > 0
+        ? normalizeStringArray(mcpPolicySource.baselineRequired)
+        : [...defaultMcpPolicy.baselineRequired],
+      optional: normalizeStringArray(mcpPolicySource.optional),
+    },
+  };
+}
+
 async function loadMcpRegistry() {
   const parsed = await readJsonIfExists(path.join(workspaceRoot, '.vscode', 'mcp.json'));
   return {
     source: '.vscode/mcp.json',
     servers: parsed?.mcpServers ? Object.keys(parsed.mcpServers).sort() : [],
   };
+}
+
+async function buildManagedTargets(repositories, controlPlane) {
+  const managedTargets = [];
+  const seenPaths = new Set();
+
+  const addTarget = target => {
+    if (!target?.path || seenPaths.has(target.path)) {
+      return;
+    }
+    seenPaths.add(target.path);
+    managedTargets.push(target);
+  };
+
+  for (const repository of repositories) {
+    addTarget({
+      ...repository,
+      kind: 'repository',
+      detection: 'git',
+      contextSurface: 'repo-local',
+    });
+  }
+
+  for (const declaredTarget of controlPlane.managedTargets) {
+    const absolutePath = path.join(workspaceRoot, declaredTarget.path);
+    const exists = await pathExists(absolutePath);
+    addTarget({
+      name: declaredTarget.name,
+      path: declaredTarget.path,
+      kind: declaredTarget.kind,
+      detection: 'declared',
+      contextSurface: declaredTarget.contextSurface,
+      localAgentAssets: exists ? await detectLocalAgentAssets(absolutePath) : {
+        hasAgents: false,
+        hasClaude: false,
+        hasGithub: false,
+      },
+      exists,
+    });
+  }
+
+  return managedTargets.sort((left, right) => left.path.localeCompare(right.path));
 }
 
 function rel(targetPath) {
@@ -214,6 +308,10 @@ async function applyCopilotRuntime(managedPaths) {
   results.push({ path: '.github/skills', status: 'ensured-directory' });
   await ensureDir(path.join(workspaceRoot, '.github', 'prompts'));
   results.push({ path: '.github/prompts', status: 'ensured-directory' });
+  await ensureDir(path.join(workspaceRoot, '.github', 'bootstrap'));
+  results.push({ path: '.github/bootstrap', status: 'ensured-directory' });
+  await ensureDir(path.join(workspaceRoot, '.github', 'memory'));
+  results.push({ path: '.github/memory', status: 'ensured-directory' });
 
   for (const rootName of legacyManagedRoots) {
     const absolutePath = path.join(workspaceRoot, rootName);
@@ -240,6 +338,7 @@ async function main() {
   const managedPaths = collectManagedPaths(previousMap);
   const rootAdapters = await detectRootAdapters();
   const processes = detectProcesses();
+  const controlPlane = await loadControlPlane();
   const environment = {
     mode: classifyMode(processes),
     primary_tool: 'copilot',
@@ -247,6 +346,7 @@ async function main() {
   };
 
   const { repositories, utilityDirectories } = await scanTopLevelFolders();
+  const managedTargets = await buildManagedTargets(repositories, controlPlane);
   const mcp = await loadMcpRegistry();
   const adapterResults = await applyCopilotRuntime(managedPaths);
 
@@ -258,7 +358,13 @@ async function main() {
     detectedRootAdapters: rootAdapters,
     detectedProcesses: processes.filter(name => processNames.includes(name)).sort(),
     repositories,
+    managedTargets,
     utilityDirectories,
+    controlPlane: {
+      source: controlPlane.source,
+      shellMemory: controlPlane.shellMemory,
+      mcpPolicy: controlPlane.mcpPolicy,
+    },
     mcp,
     adapters: adapterResults,
   };
@@ -274,6 +380,7 @@ async function main() {
 
   console.log(JSON.stringify(environment, null, 2));
   console.log('repositories=' + repositories.length);
+  console.log('managed_targets=' + managedTargets.length);
   console.log('adapter_changes=' + adapterResults.length);
   if (dryRun) {
     console.log('\n[DRY-RUN] workspace-map.json and mcp-registry.json were NOT updated.');

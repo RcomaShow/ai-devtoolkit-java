@@ -2,7 +2,7 @@
 name: feature-implementation
 description: "Internal workflow for delivering a new capability through analyze -> plan -> implement -> review -> fix -> finalize. Invoked by team-lead."
 triggers: ["implement", "add feature", "new endpoint", "create service", "add domain behavior", "nuova funzionalita", "implementa", "aggiungi endpoint"]
-agents: [software-architect, backend-engineer, tdd-validator, code-reviewer]
+agents: [context-optimizer, orchestrator, software-architect, backend-engineer, tdd-validator, code-reviewer]
 skills: [clean-architecture, quarkus-backend, tdd-workflow, git-atomic-commit]
 estimated-steps: 6
 ---
@@ -11,43 +11,45 @@ estimated-steps: 6
 
 ## Purpose
 
-Use this workflow when `team-lead` is asked to add a new backend capability. The workflow is deliberately loop-oriented: no feature is considered done until implementation, tests, and review all converge.
+Use this workflow when `team-lead` is asked to add a new backend capability. The outer control plane stays fixed: context -> plan -> execute -> verify -> review -> fix.
 
 ## Steps
 
-### Step 1 — Analyze the request
+### Step 1 — Scope context and evidence
 
-**Lead specialist:** `software-architect`
+**Lead specialist:** `context-optimizer`
+
+Produce:
+- repo and module scope
+- repo-memory and skill load plan
+- missing discovery items that still need `Explore`
+
+### Step 2 — Plan and route the change set
+
+**Lead specialist:** `orchestrator`
+**Support:** `software-architect`
 **Load first:** `skills/clean-architecture/SKILL.md`
 
 Produce:
-- impacted layers and modules
-- acceptance criteria
-- open questions or constraints
-
-### Step 2 — Plan the change set
-
-**Lead specialist:** `software-architect`
-**Support:** `backend-engineer`
-
-Produce:
 - ordered implementation plan
-- class and file list to create or modify
-- data, API, and migration touchpoints
+- execution specialists and skills to load
+- verification strategy and re-entry step
 
-### Step 3 — Implement the feature
+### Step 3 — Execute the feature
 
-**Lead specialist:** `backend-engineer`
+**Lead specialists:** `software-architect` then `backend-engineer`
 **Load first:** `skills/quarkus-backend/SKILL.md`
 
-Implement the smallest coherent vertical slice that satisfies the plan.
+Produce:
+- the smallest coherent vertical slice that satisfies the plan
+- required architecture, persistence, service, and API changes
 
-### Step 4 — Add or update tests
+### Step 4 — Verify new behavior
 
 **Lead specialist:** `tdd-validator`
 **Load first:** `skills/tdd-workflow/SKILL.md`
 
-Add tests that prove the new behavior and cover the main risk paths introduced by the feature.
+Add tests that prove the new behavior and protect the main risk paths introduced by the feature.
 
 ### Step 5 — Review the result
 
@@ -63,13 +65,13 @@ Check:
 ### Step 6 — Fix and finalize
 
 **Owner:** `team-lead`
-**Loop rule:** if Step 4 or Step 5 finds issues, return to the earliest failing step and iterate.
+**Loop rule:** if context is incomplete, return to Step 1. If planning is weak, return to Step 2. If verification or review finds issues, return to Step 3 or Step 4 and iterate.
 
 Finalize only when the change is consistent, verified, and review-clean.
 
 ## Exit Criteria
 
-- analysis and plan are explicit
+- context and plan are explicit
 - implementation matches the agreed scope
 - tests cover the new behavior
 - review findings are either fixed or clearly documented

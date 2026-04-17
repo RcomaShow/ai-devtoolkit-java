@@ -1,5 +1,7 @@
 # GitHub Copilot Agent Mode — FULL OPERATING SYSTEM (Java + Quarkus + Kafka)
 
+> Archived blueprint. The active runtime in this workspace uses `team-lead` as the only premium public orchestrator and a fixed hidden chain: `context-optimizer -> orchestrator -> execution specialist -> verifier -> code-reviewer -> team-lead finalize`.
+
 ## 🚀 PURPOSE
 
 This is the **complete operational blueprint** for turning GitHub Copilot Agent Mode into a Claude Code-like engineering system.
@@ -45,7 +47,7 @@ It includes:
 
 # 2. SUB-AGENT SYSTEM (FULL DESIGN)
 
-## 2.1 Orchestrator (MAIN AGENT)
+## 2.1 Planner-Router / Orchestrator Stage
 
 Responsibilities:
 - Interpret task

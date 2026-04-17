@@ -9,6 +9,8 @@ $agentsDir = Join-Path $workspaceRoot '.github\agents'
 $catalog = @(
     'team-lead',
     'developer',
+    'memory-manager',
+    'context-optimizer',
     'bootstrap-workspace',
     'orchestrator',
     'agent-architect',
@@ -19,11 +21,12 @@ $catalog = @(
     'tdd-validator',
     'test-coverage-engineer',
     'code-reviewer',
-    'legacy-migration'
+    'legacy-migration',
+    'xhtml-db-tracer'
 )
 
 $requiredFields = @('description', 'tools', 'effort', 'argument-hint', 'agents', 'user-invocable')
-$allowedModels = @('GPT-5 (copilot)', 'Claude Sonnet 4.5 (copilot)')
+$allowedModels = @('GPT-5.4', 'GPT-5.3 Codex', 'Claude Sonnet 4.6', 'Claude Opus 4.6')
 $allowedToolAliases = @('read', 'search', 'edit', 'execute', 'todo', 'agent', 'web')
 
 function Get-FrontmatterBlock {
@@ -166,7 +169,19 @@ if ($surfaceOk) {
     }
 }
 
-if ($missing.Count -eq 0 -and $broken.Count -eq 0 -and $surfaceOk) {
+$plannerChainOk = $true
+$teamLeadFile = Join-Path $agentsDir 'team-lead.agent.md'
+if (Test-Path $teamLeadFile) {
+    $teamLeadContent = Get-Content $teamLeadFile -Raw
+    $teamLeadFrontmatter = Get-FrontmatterBlock -Content $teamLeadContent
+    $teamLeadDelegates = Parse-FrontmatterList -Raw (Get-FrontmatterValue -Frontmatter $teamLeadFrontmatter -Field 'agents')
+    if ($teamLeadDelegates -notcontains 'orchestrator') {
+        Write-Host 'Planner chain issue: team-lead should delegate to orchestrator as the hidden planning stage.' -ForegroundColor Yellow
+        $plannerChainOk = $false
+    }
+}
+
+if ($missing.Count -eq 0 -and $broken.Count -eq 0 -and $surfaceOk -and $plannerChainOk) {
     Write-Host 'All baseline agents present and complete.' -ForegroundColor Green
     exit 0
 }
@@ -180,4 +195,8 @@ Write-Host "`nMissing agents require scaffolding from toolkit templates." -Foreg
 Write-Host 'Incomplete agents: fix frontmatter, model aliases, and tool aliases before relying on discovery.' -ForegroundColor Yellow
 Write-Host 'If the public surface is wrong, restore team-lead and developer as the only public agents.' -ForegroundColor Yellow
 
-exit ($missing.Count + $broken.Count + $(if ($surfaceOk) { 0 } else { 1 }))
+if (-not $plannerChainOk) {
+    Write-Host 'Restore the hidden planner chain by delegating from team-lead to orchestrator.' -ForegroundColor Yellow
+}
+
+exit ($missing.Count + $broken.Count + $(if ($surfaceOk) { 0 } else { 1 }) + $(if ($plannerChainOk) { 0 } else { 1 }))
